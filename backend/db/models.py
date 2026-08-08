@@ -4,7 +4,7 @@ from db.database import Base
 
 class Violation(Base):
     __tablename__ = "violations"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     violation_type = Column(String)
@@ -15,6 +15,15 @@ class Violation(Base):
     alert_sent = Column(Boolean, default=False)
     missing_ppe = Column(String)
     details = Column(String)
+
+    # ── Enriched columns (added in Core Fixes milestone) ──
+    # `bbox`          — JSON-text primary person bounding box, [x1, y1, x2, y2]
+    # `detections`    — JSON-text full detection list for the violating frame
+    # `source`        — "image_upload" | "video_upload" | "live_stream"
+    # All are nullable so legacy rows from before this migration remain valid.
+    bbox = Column(String, nullable=True)
+    detections = Column(String, nullable=True)
+    source = Column(String, nullable=True)
 
 class AlertSettings(Base):
     __tablename__ = "alert_settings"

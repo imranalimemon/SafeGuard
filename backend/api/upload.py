@@ -1,6 +1,7 @@
 """
 SafeGuard AI — Image & Video Upload API
 """
+import json
 import os
 import shutil
 import uuid
@@ -14,6 +15,7 @@ from db.models import Violation
 from detection.model import PPEDetector
 from detection.violation_logic import compute_violations
 from detection.annotator import annotate_frame
+from detection.deduplicator import deduplicator
 from config import settings
 from alerts.alert_manager import trigger_alerts
 
@@ -27,6 +29,19 @@ def get_detector():
     if _detector is None:
         _detector = PPEDetector()
     return _detector
+
+
+def _serialize_detections(detections):
+    """Convert detection dicts to JSON-safe form (bbox is already a list of ints)."""
+    return [
+        {
+            "class_id": d["class_id"],
+            "class_name": d["class_name"],
+            "confidence": round(float(d["confidence"]), 4),
+            "bbox": [int(x) for x in d["bbox"]],
+        }
+        for d in detections
+    ]
 
 
 @router.post("/api/upload/image")
@@ -64,33 +79,45 @@ async def upload_image(
     violating = sum(1 for v in violations if v["status"] == "VIOLATION")
     compliant = total_persons - violating
 
-    # Log violations to database
+    full_detections_json = json.dumps(_serialize_detections(detections))
+
+    # Log violations to database (deduplicated per source+missing_ppe)
+    suppressed_count = 0
     for v in violations:
-        if v["status"] == "VIOLATION":
-            db_violation = Violation(
-                timestamp=datetime.utcnow(),
-                violation_type=f"Missing: {', '.join(v['missing_ppe'])}",
-                person_count=total_persons,
-                violation_count=violating,
-                screenshot_path=screenshot_url,
-                confidence=v["confidence"],
-                missing_ppe=", ".join(v["missing_ppe"]),
-                details=f"Image upload: {file.filename}",
-            )
-            db.add(db_violation)
-            db.commit()
-            db.refresh(db_violation)
-            
-            violation_dict = {
-                "id": db_violation.id,
-                "violation_type": db_violation.violation_type,
-                "missing_ppe": db_violation.missing_ppe,
-                "person_count": db_violation.person_count,
-                "confidence": db_violation.confidence,
-                "screenshot_path": screenshot_path,
-                "timestamp": str(db_violation.timestamp)
-            }
-            background_tasks.add_task(trigger_alerts, violation_dict, screenshot_path)
+        if v["status"] != "VIOLATION":
+            continue
+
+        if not deduplicator.should_log("image_upload", v["missing_ppe"]):
+            suppressed_count += 1
+            continue
+
+        db_violation = Violation(
+            timestamp=datetime.utcnow(),
+            violation_type=f"Missing: {', '.join(v['missing_ppe'])}",
+            person_count=total_persons,
+            violation_count=violating,
+            screenshot_path=screenshot_url,
+            confidence=v["confidence"],
+            missing_ppe=", ".join(v["missing_ppe"]),
+            details=f"Image upload: {file.filename}",
+            bbox=json.dumps([int(x) for x in v["person_bbox"]]),
+            detections=full_detections_json,
+            source="image_upload",
+        )
+        db.add(db_violation)
+        db.commit()
+        db.refresh(db_violation)
+
+        violation_dict = {
+            "id": db_violation.id,
+            "violation_type": db_violation.violation_type,
+            "missing_ppe": db_violation.missing_ppe,
+            "person_count": db_violation.person_count,
+            "confidence": db_violation.confidence,
+            "screenshot_path": screenshot_path,
+            "timestamp": str(db_violation.timestamp),
+        }
+        background_tasks.add_task(trigger_alerts, violation_dict, screenshot_path)
 
     # Cleanup temp
     os.remove(temp_path)
@@ -120,6 +147,7 @@ async def upload_image(
             "total_persons": total_persons,
             "compliant": compliant,
             "violations": violating,
+            "suppressed_by_cooldown": suppressed_count,
         },
     }
 
@@ -136,6 +164,7 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
     frame_count = 0
     violation_frames = []
     total_violations_detected = 0
+    total_suppressed = 0
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -156,21 +185,18 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
             cv2.imwrite(screenshot_path, annotated)
             screenshot_url = f"/screenshots/{screenshot_filename}"
 
-            violation_frames.append(
-                {
-                    "frame_number": frame_count,
-                    "violations": [
-                        {"missing_ppe": v["missing_ppe"], "status": v["status"]}
-                        for v in violating
-                    ],
-                    "screenshot_url": screenshot_url,
-                }
-            )
-            total_violations_detected += len(violating)
-
-            # Log to DB
             total_persons = sum(1 for d in detections if d["class_id"] == settings.PERSON_CLASS_ID)
+            full_detections_json = json.dumps(_serialize_detections(detections))
+
+            recorded_any = False
             for v in violating:
+                # Cooldown key: (source, missing_ppe). Frame index is NOT part of
+                # the key so a sustained violation across many sampled frames
+                # only logs once per cooldown window.
+                if not deduplicator.should_log("video_upload", v["missing_ppe"]):
+                    total_suppressed += 1
+                    continue
+
                 db_violation = Violation(
                     timestamp=datetime.utcnow(),
                     violation_type=f"Missing: {', '.join(v['missing_ppe'])}",
@@ -180,11 +206,14 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
                     confidence=v["confidence"],
                     missing_ppe=", ".join(v["missing_ppe"]),
                     details=f"Video frame #{frame_count}",
+                    bbox=json.dumps([int(x) for x in v["person_bbox"]]),
+                    detections=full_detections_json,
+                    source="video_upload",
                 )
                 db.add(db_violation)
                 db.commit()
                 db.refresh(db_violation)
-                
+
                 violation_dict = {
                     "id": db_violation.id,
                     "violation_type": db_violation.violation_type,
@@ -192,9 +221,25 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
                     "person_count": db_violation.person_count,
                     "confidence": db_violation.confidence,
                     "screenshot_path": screenshot_path,
-                    "timestamp": str(db_violation.timestamp)
+                    "timestamp": str(db_violation.timestamp),
                 }
                 background_tasks.add_task(trigger_alerts, violation_dict, screenshot_path)
+                recorded_any = True
+
+            # Append a frame summary when something was logged (or about to be
+            # logged) so the response captures the first occurrence at minimum.
+            if recorded_any:
+                violation_frames.append(
+                    {
+                        "frame_number": frame_count,
+                        "violations": [
+                            {"missing_ppe": v["missing_ppe"], "status": v["status"]}
+                            for v in violating
+                        ],
+                        "screenshot_url": screenshot_url,
+                    }
+                )
+            total_violations_detected += len(violating)
 
     cap.release()
     os.remove(temp_path)
@@ -202,5 +247,7 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
     return {
         "total_frames": frame_count,
         "violations_detected": total_violations_detected,
+        "violations_logged": total_violations_detected - total_suppressed,
+        "suppressed_by_cooldown": total_suppressed,
         "violation_frames": violation_frames,
     }

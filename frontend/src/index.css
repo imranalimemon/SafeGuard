@@ -89,6 +89,14 @@ body {
   from { transform: translateX(-100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @keyframes fadeInDown {
   from { transform: translateY(-10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -106,6 +114,12 @@ body {
 /* --- Animation Utilities --- */
 .animate-slide-in-left {
   animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
 }
 .animate-fade-in-down {
   animation: fadeInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;

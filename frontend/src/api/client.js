@@ -7,6 +7,7 @@ const client = axios.create({
 export const getHealth = () => client.get('/health');
 export const getDashboardStats = () => client.get('/stats/dashboard');
 export const getViolations = (params) => client.get('/violations', { params });
+export const getViolationById = (id) => client.get(`/violations/${id}`);
 export const uploadImage = (file) => {
   const formData = new FormData();
   formData.append('file', file);

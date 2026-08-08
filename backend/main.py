@@ -10,13 +10,17 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import settings
-from db.database import engine, Base
+from db.database import engine, Base, ensure_violation_columns
 from api import health, upload, violations, stats
 from api import settings as api_settings
 from websocket.manager import router as websocket_router
 
-# Create database tables
+# Create database tables (fresh installs)
 Base.metadata.create_all(bind=engine)
+
+# Idempotent column-level migration for legacy safeguard.db files
+# (no Alembic at this milestone — see db/database.py for details).
+ensure_violation_columns(engine)
 
 app = FastAPI(
     title="SafeGuard AI API",
