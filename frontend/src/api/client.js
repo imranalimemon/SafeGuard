@@ -26,4 +26,12 @@ export const getAlertSettings = () => client.get('/settings/alerts');
 export const updateAlertSettings = (data) => client.put('/settings/alerts', data);
 export const clearViolations = () => client.delete('/violations');
 
+// Cameras CRUD — see backend/api/cameras.py. Errors propagate via the axios
+// instance's normal reject path (caller renders the message).
+export const listCameras = () => client.get('/cameras');
+export const createCamera = (data) => client.post('/cameras', data);
+export const updateCamera = (id, data) => client.put(`/cameras/${id}`, data);
+export const deleteCamera = (id) => client.delete(`/cameras/${id}`);
+export const testCamera = (id) => client.post(`/cameras/${id}/test`);
+
 export default client;

@@ -5,6 +5,7 @@ const Sidebar = () => {
   const links = [
     { name: 'Dashboard', path: '/', icon: 'dashboard' },
     { name: 'Violations', path: '/violations', icon: 'warning' },
+    { name: 'Cameras', path: '/cameras', icon: 'videocam' },
     { name: 'Upload', path: '/upload', icon: 'upload' },
     { name: 'Settings', path: '/settings', icon: 'settings' },
   ];
@@ -12,6 +13,7 @@ const Sidebar = () => {
   const hoverAnimations = {
     dashboard: 'group-hover:scale-110',
     warning: '',
+    videocam: 'group-hover:scale-110',
     upload: 'group-hover:-translate-y-1',
     settings: 'group-hover:rotate-45',
   };

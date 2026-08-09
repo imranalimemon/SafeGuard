@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import StatCard from '../components/ui/StatCard';
-import { getDashboardStats } from '../api/client';
+import { getDashboardStats, listCameras } from '../api/client';
+
+const SELECTED_CAMERA_KEY = 'sg_selected_camera';
 
 const DashboardPage = () => {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -13,6 +16,10 @@ const DashboardPage = () => {
     avg_confidence: 0,
     recent_violations: []
   });
+  const [cameras, setCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState(
+    () => localStorage.getItem(SELECTED_CAMERA_KEY) || null
+  );
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const intentionallyStoppedRef = useRef(false);
@@ -26,17 +33,68 @@ const DashboardPage = () => {
     }
   };
 
+  const fetchCameras = async () => {
+    try {
+      const res = await listCameras();
+      const data = Array.isArray(res.data) ? res.data : [];
+      setCameras(data);
+      // If the persisted camera is gone — deleted, disabled, or never set —
+      // fall back to the first available enabled camera.
+      setSelectedCameraId((current) => {
+        if (current && data.find((c) => c.id === Number(current) && c.enabled)) {
+          return current;
+        }
+        const first = data.find((c) => c.enabled);
+        const next = first ? String(first.id) : null;
+        if (next) localStorage.setItem(SELECTED_CAMERA_KEY, next);
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to load cameras", err);
+      setCameras([]);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    fetchCameras();
+  }, []);
+
+  const handleCameraChange = (e) => {
+    const id = e.target.value || null;
+    setSelectedCameraId(id);
+    if (id) localStorage.setItem(SELECTED_CAMERA_KEY, id);
+    // If the stream is up, restart it against the new camera.
+    if (isStreaming) {
+      intentionallyStoppedRef.current = true;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      setIsStreaming(false);
+      setFrame(null);
+      // Defer slightly so the onclose cleanup runs first.
+      setTimeout(() => startStream(), 50);
+    }
+  };
+
   const startStream = () => {
     if (!wsRef.current) {
+      if (!selectedCameraId) {
+        // No camera selected — nothing to connect to.
+        return;
+      }
       intentionallyStoppedRef.current = false;
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsRef.current = new WebSocket(`${protocol}//${window.location.host}/ws/stream`);
+      wsRef.current = new WebSocket(
+        `${protocol}//${window.location.host}/ws/stream/${selectedCameraId}`
+      );
       wsRef.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -88,12 +146,40 @@ const DashboardPage = () => {
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-sg-on-surface-variant">videocam</span>
               <h2 className="font-headline-sm text-sg-on-surface">Live Feed</h2>
+              <div className="relative ml-3">
+                <select
+                  value={selectedCameraId || ''}
+                  onChange={handleCameraChange}
+                  disabled={cameras.length === 0}
+                  className="appearance-none bg-sg-surface-container border border-sg-outline-variant text-sg-on-surface font-body-md rounded-lg pl-4 pr-10 py-1.5 focus:outline-none focus:border-sg-primary focus:ring-1 focus:ring-sg-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cameras.length === 0 ? (
+                    <option value="">No cameras</option>
+                  ) : (
+                    cameras.map((c) => (
+                      <option key={c.id} value={c.id} disabled={!c.enabled}>
+                        {c.name}{c.source_type ? ` (${c.source_type})` : ''}{c.enabled ? '' : ' — disabled'}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-sg-on-surface-variant pointer-events-none text-sm">expand_more</span>
+              </div>
+              {cameras.length === 0 && (
+                <Link
+                  to="/cameras"
+                  className="ml-3 font-body-md text-sg-primary hover:text-sg-primary-fixed-dim transition-colors"
+                >
+                  Add a camera →
+                </Link>
+              )}
             </div>
             <div className="flex gap-2">
               {!isStreaming ? (
                 <button
                   onClick={startStream}
-                  className="flex items-center gap-2 px-4 py-2 bg-sg-primary text-sg-on-primary font-body-md font-bold rounded hover:bg-sg-primary-fixed-dim transition-colors"
+                  disabled={!selectedCameraId || cameras.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-sg-primary text-sg-on-primary font-body-md font-bold rounded hover:bg-sg-primary-fixed-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined text-sm">play_arrow</span>
                   Start Stream

@@ -52,13 +52,23 @@ def get_violations(
     offset: int = 0,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    camera_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
+    """
+    List violations. Optional filters:
+      - start_date / end_date — inclusive ISO datetimes (added Phase 1)
+      - camera_id            — matches violations with `source = "camera:{id}"`
+                               (added Phase 2). Other source strings are
+                               unaffected. Pass `None` to disable.
+    """
     query = db.query(Violation)
     if start_date:
         query = query.filter(Violation.timestamp >= start_date)
     if end_date:
         query = query.filter(Violation.timestamp <= end_date)
+    if camera_id is not None:
+        query = query.filter(Violation.source == f"camera:{camera_id}")
     rows = query.order_by(Violation.timestamp.desc()).offset(offset).limit(limit).all()
     return [_serialize_violation(r) for r in rows]
 

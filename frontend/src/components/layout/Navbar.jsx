@@ -13,6 +13,7 @@ const Navbar = () => {
     switch (location.pathname) {
       case '/': return 'Dashboard';
       case '/violations': return 'Violations History';
+      case '/cameras': return 'Camera Management';
       case '/upload': return 'Upload & Detect';
       case '/settings': return 'System Settings';
       default: return '';

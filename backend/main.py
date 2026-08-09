@@ -13,6 +13,7 @@ from config import settings
 from db.database import engine, Base, ensure_violation_columns
 from api import health, upload, violations, stats
 from api import settings as api_settings
+from api import cameras
 from websocket.manager import router as websocket_router
 
 # Create database tables (fresh installs)
@@ -49,6 +50,7 @@ app.include_router(upload.router)
 app.include_router(violations.router)
 app.include_router(stats.router)
 app.include_router(api_settings.router)
+app.include_router(cameras.router)
 app.include_router(websocket_router)
 
 @app.on_event("startup")

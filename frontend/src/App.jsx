@@ -4,6 +4,7 @@ import Sidebar from './components/layout/Sidebar';
 import Navbar from './components/layout/Navbar';
 import DashboardPage from './pages/DashboardPage';
 import ViolationsPage from './pages/ViolationsPage';
+import CamerasPage from './pages/CamerasPage';
 import UploadPage from './pages/UploadPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -19,6 +20,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/violations" element={<ViolationsPage />} />
+                <Route path="/cameras" element={<CamerasPage />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
