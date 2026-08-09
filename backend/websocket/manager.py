@@ -21,6 +21,7 @@ automatically — no changes needed there.
 import asyncio
 import base64
 import json
+import sys
 from datetime import datetime
 from typing import List
 
@@ -83,7 +84,11 @@ def _build_capture(camera: Camera) -> cv2.VideoCapture:
     if camera.source_type == "webcam":
         # url stores the integer index as a string; default to 0.
         idx = int(camera.url) if (camera.url and camera.url.isdigit()) else 0
-        return cv2.VideoCapture(idx)
+        # Prefer DirectShow on Windows — MSMF (the default) often returns
+        # `isOpened() == True` even when no real device is present, which
+        # makes the live stream silently show a black/empty frame.
+        backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY
+        return cv2.VideoCapture(idx, backend)
     # ip / rtsp — inject credentials if the row carries them and the URL
     # doesn't already include them.
     url = camera.url or ""

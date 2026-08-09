@@ -5,6 +5,7 @@ import {
   updateCamera,
   deleteCamera,
   testCamera,
+  scanCameras,
 } from '../api/client';
 import Drawer from '../components/ui/Drawer';
 import Toggle from '../components/ui/Toggle';
@@ -47,6 +48,8 @@ const CamerasPage = () => {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testStatus, setTestStatus] = useState({}); // { [id]: { ok, message, loading } }
+  const [scanResults, setScanResults] = useState([]); // [{ index, width, height, backend }]
+  const [isScanning, setIsScanning] = useState(false);
 
   const fetchCameras = useCallback(async () => {
     setIsLoading(true);
@@ -69,6 +72,7 @@ const CamerasPage = () => {
     setEditing(null);
     setForm(emptyForm());
     setFormError('');
+    setScanResults([]);
     setDrawerOpen(true);
   };
 
@@ -84,6 +88,7 @@ const CamerasPage = () => {
       enabled: camera.enabled !== false,
     });
     setFormError('');
+    setScanResults([]);
     setDrawerOpen(true);
   };
 
@@ -91,6 +96,7 @@ const CamerasPage = () => {
     setDrawerOpen(false);
     setEditing(null);
     setFormError('');
+    setScanResults([]);
   };
 
   const handleSubmit = async (e) => {
@@ -169,6 +175,24 @@ const CamerasPage = () => {
           message: typeof detail === 'string' ? detail : 'Test failed',
         },
       }));
+    }
+  };
+
+  const handleScanCameras = async () => {
+    setIsScanning(true);
+    try {
+      const res = await scanCameras(4);
+      const found = Array.isArray(res.data?.cameras) ? res.data.cameras : [];
+      setScanResults(found);
+      // Pre-select the first detected camera if the form is empty.
+      if (found.length > 0 && !form.url) {
+        setForm((prev) => ({ ...prev, url: String(found[0].index) }));
+      }
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      setFormError(typeof detail === 'string' ? detail : 'Camera scan failed');
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -358,18 +382,73 @@ const CamerasPage = () => {
           )}
 
           {form.source_type === 'webcam' && (
-            <div className="flex flex-col gap-1">
-              <label className="font-label-caps text-sg-on-surface-variant">Webcam Index</label>
-              <input
-                type="text"
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="0"
-                className="bg-sg-surface-container border border-sg-outline-variant text-sg-on-surface font-data-mono text-sm rounded-lg px-4 py-2 focus:outline-none focus:border-sg-primary focus:ring-1 focus:ring-sg-primary transition-colors"
-              />
-              <p className="font-label-caps text-[10px] text-sg-on-surface-variant">
-                Defaults to 0. Use 1, 2, etc. for additional local cameras.
-              </p>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label className="font-label-caps text-sg-on-surface-variant">Webcam Index</label>
+                <button
+                  type="button"
+                  onClick={handleScanCameras}
+                  disabled={isScanning}
+                  className="flex items-center gap-1 px-2 py-1 text-sg-primary hover:bg-sg-primary-container/10 rounded font-body-md text-xs transition-colors disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {isScanning ? 'progress_activity' : 'search'}
+                  </span>
+                  {isScanning ? 'Scanning…' : 'Scan Local Cameras'}
+                </button>
+              </div>
+
+              {scanResults.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto">
+                    {scanResults.map((cam) => {
+                      const selected = String(cam.index) === form.url;
+                      return (
+                        <button
+                          key={cam.index}
+                          type="button"
+                          onClick={() => setForm({ ...form, url: String(cam.index) })}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-colors text-left ${
+                            selected
+                              ? 'border-sg-primary bg-sg-primary-container/15 text-sg-primary'
+                              : 'border-sg-outline-variant bg-sg-surface-container text-sg-on-surface hover:border-sg-primary hover:bg-sg-surface-container-high'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base">
+                              {selected ? 'check_circle' : 'videocam'}
+                            </span>
+                            <span className="font-body-md font-medium">Camera {cam.index}</span>
+                          </span>
+                          <span className="font-data-mono text-xs text-sg-on-surface-variant">
+                            {cam.width}×{cam.height}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScanResults([])}
+                    className="font-label-caps text-[10px] text-sg-on-surface-variant hover:text-sg-on-surface self-start"
+                  >
+                    Hide scan results
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={form.url}
+                    onChange={(e) => setForm({ ...form, url: e.target.value })}
+                    placeholder="0"
+                    className="bg-sg-surface-container border border-sg-outline-variant text-sg-on-surface font-data-mono text-sm rounded-lg px-4 py-2 focus:outline-none focus:border-sg-primary focus:ring-1 focus:ring-sg-primary transition-colors"
+                  />
+                  <p className="font-label-caps text-[10px] text-sg-on-surface-variant">
+                    Click <span className="text-sg-primary">Scan Local Cameras</span> above to detect, or type an index manually (defaults to 0).
+                  </p>
+                </>
+              )}
             </div>
           )}
 

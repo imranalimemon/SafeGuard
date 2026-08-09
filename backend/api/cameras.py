@@ -20,6 +20,7 @@ from typing import List, Optional
 
 import asyncio
 import cv2
+import sys
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
@@ -128,6 +129,22 @@ def create_camera(payload: CameraCreate, db: Session = Depends(get_db)) -> dict:
     return _serialize(cam)
 
 
+# IMPORTANT: register `/api/cameras/scan-local` BEFORE the parametric
+# `/api/cameras/{camera_id}` route below. FastAPI matches in registration
+# order, so the latter would otherwise grab `/scan-local` as `camera_id` and
+# reject it as a non-integer. Same reason `/{camera_id}/test` is harmless:
+# its path has an extra segment that doesn't conflict.
+@router.get("/api/cameras/scan-local")
+async def scan_cameras(max_index: int = 4) -> dict:
+    """Enumerate local webcams. Frontend uses this to populate the
+    `Webcam Index` dropdown on the Cameras add-form.
+
+    Returns: `{"cameras": [{"index": 0, "width": 640, "height": 480, "backend": "DSHOW"}, ...]}`
+    """
+    cameras = await _scan_local_cameras(max_index=max_index)
+    return {"cameras": cameras}
+
+
 @router.get("/api/cameras/{camera_id}")
 def get_camera(camera_id: int, db: Session = Depends(get_db)) -> dict:
     cam = db.query(Camera).filter(Camera.id == camera_id).first()
@@ -171,7 +188,12 @@ async def _try_open(camera: Camera) -> dict:
         url = camera.url or "0"
         # Webcam rows store the index as a string ("0", "1", ...); cv2 wants int.
         if camera.source_type == "webcam":
-            cap = cv2.VideoCapture(int(url) if url.isdigit() else 0)
+            idx = int(url) if url.isdigit() else 0
+            # Prefer DirectShow on Windows — MSMF (the default) often returns
+            # `isOpened() == True` even when no device is present, which makes
+            # the test endpoint lie about success.
+            backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY
+            cap = cv2.VideoCapture(idx, backend)
         else:
             if camera.username and camera.password and "://" in url and "@" not in url.split("://", 1)[1]:
                 scheme, rest = url.split("://", 1)
@@ -195,3 +217,40 @@ async def test_camera(camera_id: int, db: Session = Depends(get_db)) -> dict:
     if not cam:
         raise HTTPException(status_code=404, detail="Camera not found")
     return await _try_open(cam)
+
+
+async def _scan_local_cameras(max_index: int = 4) -> list[dict]:
+    """Enumerate local webcam indices 0..max_index-1 and return only those
+    that actually produce a frame (CAP_ANY alone lies on Windows).
+
+    Runs in a thread executor to keep the event loop free. Each candidate is
+    opened, read once, and immediately released — the scan itself doesn't hold
+    any capture open. Max-index default 4 keeps the scan snappy on laptops
+    that don't have anything past index 0; bump via `?max_index=` if needed.
+    """
+
+    def _scan() -> list[dict]:
+        backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY
+        found: list[dict] = []
+        for idx in range(max_index):
+            cap = cv2.VideoCapture(idx, backend)
+            if not cap.isOpened():
+                cap.release()
+                continue
+            # Confirm the device is real: MSMF reports "open" for absent
+            # devices on Windows, but `read()` returns False. Without this
+            # check the scan returns phantom indices.
+            ret, frame = cap.read()
+            cap.release()
+            if not ret or frame is None:
+                continue
+            h, w = frame.shape[:2]
+            found.append({
+                "index": idx,
+                "width": int(w),
+                "height": int(h),
+                "backend": "DSHOW" if sys.platform == "win32" else "ANY",
+            })
+        return found
+
+    return await asyncio.get_event_loop().run_in_executor(None, _scan)

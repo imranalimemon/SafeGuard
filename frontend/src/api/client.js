@@ -33,5 +33,9 @@ export const createCamera = (data) => client.post('/cameras', data);
 export const updateCamera = (id, data) => client.put(`/cameras/${id}`, data);
 export const deleteCamera = (id) => client.delete(`/cameras/${id}`);
 export const testCamera = (id) => client.post(`/cameras/${id}/test`);
+// Enumerate local webcam indices — backend probes 0..max_index-1 and returns
+// the ones that actually produce a frame on this machine.
+export const scanCameras = (maxIndex = 4) =>
+  client.get('/cameras/scan-local', { params: { max_index: maxIndex } });
 
 export default client;
