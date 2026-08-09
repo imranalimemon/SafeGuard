@@ -24,6 +24,12 @@ export const uploadVideo = (file) => {
 };
 export const getAlertSettings = () => client.get('/settings/alerts');
 export const updateAlertSettings = (data) => client.put('/settings/alerts', data);
+// Fire a single test alert through the same code path as a real violation.
+// `transport` in the response will be 'smtp' / 'twilio' / 'debug' — the
+// UI surfaces that so the operator knows whether they're seeing real
+// delivery or local receiver output.
+export const sendTestEmail = () => client.post('/settings/alerts/test-email');
+export const sendTestWhatsApp = () => client.post('/settings/alerts/test-whatsapp');
 export const clearViolations = () => client.delete('/violations');
 
 // Cameras CRUD — see backend/api/cameras.py. Errors propagate via the axios
