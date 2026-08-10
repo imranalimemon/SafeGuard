@@ -44,4 +44,12 @@ export const testCamera = (id) => client.post(`/cameras/${id}/test`);
 export const scanCameras = (maxIndex = 4) =>
   client.get('/cameras/scan-local', { params: { max_index: maxIndex } });
 
+// Combined discovery: local webcams + ONVIF WS-Discovery multicast probe.
+// Used by the "Auto-Detect" button on the Cameras page — returns the result
+// list so the operator can review and pick what to add.
+export const autoDetectCameras = (maxIndex = 4, onvifTimeout = 3.0) =>
+  client.get('/cameras/auto-detect', {
+    params: { max_index: maxIndex, onvif_timeout: onvifTimeout },
+  });
+
 export default client;

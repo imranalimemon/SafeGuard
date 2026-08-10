@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   listCameras, createCamera, updateCamera, deleteCamera, testCamera, scanCameras,
+  autoDetectCameras,
 } from '../api/client';
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -304,6 +305,232 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
   );
 };
 
+/* ── Auto-Detect Modal ──────────────────────────────────────
+ * Shows the result of GET /api/cameras/auto-detect: local webcams + any
+ * ONVIF cameras WS-Discovery found on the LAN. Operator picks which to add
+ * via checkboxes; the modal POSTs each picked item through createCamera()
+ * so existing validation + duplicate-name handling applies.
+ */
+const AutoDetectModal = ({ onClose, onAdded }) => {
+  const [phase, setPhase]     = useState('scanning'); // 'scanning' | 'review' | 'adding' | 'error'
+  const [results, setResults] = useState({ local: [], onvif: [], summary: { local_count: 0, onvif_count: 0 } });
+  const [errorMsg, setErrorMsg] = useState('');
+  const [selected, setSelected] = useState(() => new Set());
+  const [addErrors, setAddErrors] = useState([]);
+
+  // Run the scan once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await autoDetectCameras();
+        if (cancelled) return;
+        setResults(res.data || { local: [], onvif: [], summary: { local_count: 0, onvif_count: 0 } });
+        setPhase('review');
+      } catch (err) {
+        if (cancelled) return;
+        setErrorMsg(err?.response?.data?.detail || err?.message || 'Auto-detect failed.');
+        setPhase('error');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const localKey  = (c) => `local:${c.index}`;
+  const onvifKey  = (c) => `onvif:${c.ip}:${c.port}`;
+  const isSelected = (k) => selected.has(k);
+
+  const toggle = (k) => setSelected((s) => {
+    const next = new Set(s);
+    if (next.has(k)) next.delete(k);
+    else next.add(k);
+    return next;
+  });
+
+  // Pre-fill the new-camera payload the same way `emptyForm()` does so the
+  // operator doesn't need to retype values. The real "save" still goes
+  // through createCamera() so backend validation runs.
+  const buildPayload = (k) => {
+    if (k.startsWith('local:')) {
+      const idx = Number(k.split(':')[1]);
+      return {
+        name: `Webcam ${idx}`,
+        source_type: 'webcam',
+        url: String(idx),
+        enabled: true,
+      };
+    }
+    if (k.startsWith('onvif:')) {
+      const [, ip, port] = k.split(':');
+      return {
+        name: `ONVIF ${ip}`,
+        source_type: 'rtsp',
+        url: `rtsp://${ip}:${port}/onvif/streaming/channels/1`,
+        enabled: true,
+      };
+    }
+    return null;
+  };
+
+  const handleAdd = async () => {
+    if (selected.size === 0) return;
+    setPhase('adding');
+    setAddErrors([]);
+    let added = 0;
+    const errors = [];
+    for (const k of selected) {
+      const payload = buildPayload(k);
+      if (!payload) continue;
+      try {
+        await createCamera(payload);
+        added++;
+      } catch (err) {
+        errors.push({
+          key: k,
+          detail: err?.response?.data?.detail || err?.message || 'Failed to add.',
+        });
+      }
+    }
+    if (errors.length) setAddErrors(errors);
+    onAdded(added, errors);
+    if (added > 0) onClose();
+    else setPhase('review');
+  };
+
+  const totalFound = (results.local?.length || 0) + (results.onvif?.length || 0);
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div className="flex flex-col rounded-lg overflow-hidden w-[640px] max-w-[92vw] max-h-[80vh]" style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155' }}>
+        {/* Header */}
+        <div className="px-5 py-3 flex justify-between items-center" style={{ borderBottom: '1px solid rgba(90,65,54,0.5)' }}>
+          <div>
+            <h2 className="font-headline-sm" style={{ color: '#fff', fontSize: '16px' }}>Auto-Detect Cameras</h2>
+            <p className="font-data-value mt-0.5" style={{ color: '#94A3B8', fontSize: '11px' }}>
+              Local webcams + ONVIF network scan
+            </p>
+          </div>
+          <button onClick={onClose} style={{ color: '#94A3B8' }} className="hover:text-white transition-colors">
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>close</span>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+          {phase === 'scanning' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <span className="material-symbols-outlined animate-spin" style={{ fontSize: '32px', color: '#FF6B00' }}>progress_activity</span>
+              <p className="font-data-label uppercase tracking-wider" style={{ color: '#94A3B8', fontSize: '11px' }}>
+                Scanning local webcams + ONVIF network...
+              </p>
+            </div>
+          )}
+
+          {phase === 'error' && (
+            <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+              <span className="material-symbols-outlined" style={{ fontSize: '32px', color: '#FF2D55' }}>error</span>
+              <p className="font-headline-sm" style={{ color: '#FF2D55', fontSize: '13px' }}>Auto-detect failed</p>
+              <p className="font-data-value" style={{ color: '#94A3B8', fontSize: '11px' }}>{errorMsg}</p>
+            </div>
+          )}
+
+          {phase !== 'scanning' && phase !== 'error' && (
+            <>
+              {totalFound === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                  <span className="material-symbols-outlined" style={{ fontSize: '32px', color: '#313540' }}>videocam_off</span>
+                  <p className="font-headline-sm" style={{ color: '#94A3B8', fontSize: '13px' }}>No cameras detected</p>
+                  <p className="font-data-value" style={{ color: '#94A3B8', fontSize: '11px' }}>
+                    No local webcams found and no ONVIF devices responded on the LAN.
+                  </p>
+                </div>
+              )}
+
+              {results.local?.length > 0 && (
+                <div>
+                  <h3 className="font-data-label uppercase tracking-wider pb-2 mb-2" style={{ color: '#FF6B00', borderBottom: '1px solid rgba(90,65,54,0.3)', fontSize: '11px' }}>
+                    Local Webcams ({results.local.length})
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {results.local.map((c) => {
+                      const k = localKey(c);
+                      return (
+                        <label key={k} className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-colors" style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.3)' }}>
+                          <input type="checkbox" checked={isSelected(k)} onChange={() => toggle(k)} style={{ accentColor: '#FF6B00' }} />
+                          <span className="material-symbols-outlined" style={{ color: '#FF6B00', fontSize: '18px' }}>videocam</span>
+                          <div className="flex-1">
+                            <p className="font-data-value" style={{ color: '#dfe2f1', fontSize: '12px' }}>Webcam {c.index}</p>
+                            <p className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>{c.width}x{c.height} · {c.backend}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {results.onvif?.length > 0 && (
+                <div>
+                  <h3 className="font-data-label uppercase tracking-wider pb-2 mb-2" style={{ color: '#FF6B00', borderBottom: '1px solid rgba(90,65,54,0.3)', fontSize: '11px' }}>
+                    ONVIF Cameras ({results.onvif.length})
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {results.onvif.map((c) => {
+                      const k = onvifKey(c);
+                      return (
+                        <label key={k} className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-colors" style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.3)' }}>
+                          <input type="checkbox" checked={isSelected(k)} onChange={() => toggle(k)} style={{ accentColor: '#FF6B00' }} />
+                          <span className="material-symbols-outlined" style={{ color: '#FF6B00', fontSize: '18px' }}>router</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-data-value truncate" style={{ color: '#dfe2f1', fontSize: '12px' }}>
+                              {c.manufacturer || 'Unknown'} {c.model ? `· ${c.model}` : ''}
+                            </p>
+                            <p className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>
+                              {c.ip}:{c.port}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {results.onvif?.length === 0 && results.local?.length === 0 && null}
+
+              {addErrors.length > 0 && (
+                <div className="flex flex-col gap-1 px-3 py-2 rounded" style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.3)' }}>
+                  {addErrors.map((e, i) => (
+                    <p key={i} className="font-data-label" style={{ color: '#FF2D55', fontSize: '11px' }}>
+                      {e.key}: {e.detail}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 flex gap-3 justify-end" style={{ borderTop: '1px solid rgba(90,65,54,0.5)', background: 'rgba(10,14,24,0.5)' }}>
+          <button onClick={onClose} className="px-4 py-2 rounded font-data-label uppercase tracking-wider" style={{ border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', fontSize: '11px', background: 'transparent' }}>
+            Cancel
+          </button>
+          <button
+            onClick={handleAdd}
+            disabled={phase !== 'review' || selected.size === 0}
+            className="px-4 py-2 rounded font-data-label uppercase tracking-wider disabled:opacity-40"
+            style={{ background: '#FF6B00', color: '#000', fontSize: '11px', fontWeight: 700 }}
+          >
+            {phase === 'adding' ? 'Adding...' : `Add Selected (${selected.size})`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 /* ══════════════════════════════════════════════════════════ */
 const CamerasPage = () => {
   const [cameras, setCameras]         = useState([]);
@@ -314,6 +541,8 @@ const CamerasPage = () => {
   const [formError, setFormError]     = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testStatus, setTestStatus]   = useState({});
+  const [autoDetectOpen, setAutoDetectOpen] = useState(false);
+  const [toast, setToast]             = useState(null);
 
   const fetchCameras = useCallback(async () => {
     setIsLoading(true);
@@ -325,6 +554,13 @@ const CamerasPage = () => {
   }, []);
 
   useEffect(() => { fetchCameras(); }, [fetchCameras]);
+
+  // Toast auto-dismiss.
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const openAdd = () => {
     setEditing(null);
@@ -384,6 +620,15 @@ const CamerasPage = () => {
     }
   };
 
+  const handleAutoDetectAdded = (added, errors) => {
+    if (added > 0) {
+      setToast({ kind: 'ok', message: `Added ${added} camera${added === 1 ? '' : 's'}.` });
+      fetchCameras();
+    } else if (errors?.length) {
+      setToast({ kind: 'err', message: `Could not add ${errors.length} camera${errors.length === 1 ? '' : 's'}.` });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Page Header */}
@@ -399,11 +644,19 @@ const CamerasPage = () => {
             Manage IP, RTSP and webcam feeds across all sectors.
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="glass-panel flex items-center gap-2 px-3 py-1.5 rounded">
             <span className="w-2 h-2 rounded-full" style={{ background: '#10B981', boxShadow: '0 0 8px #10B981' }} />
             <span className="font-data-label" style={{ color: '#94A3B8', fontSize: '11px' }}>SYSTEM ONLINE</span>
           </div>
+          <button
+            onClick={() => setAutoDetectOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded font-data-label uppercase tracking-wider transition-colors"
+            style={{ border: '1px solid rgba(255,107,0,0.5)', color: '#FF6B00', fontSize: '11px', background: 'transparent' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>radar</span>
+            Auto-Detect
+          </button>
           <button
             onClick={openAdd}
             className="flex items-center gap-2 px-4 py-2 rounded font-data-label uppercase tracking-wider transition-colors"
@@ -463,6 +716,30 @@ const CamerasPage = () => {
           />
         )}
       </div>
+
+      {/* Auto-Detect Modal */}
+      {autoDetectOpen && (
+        <AutoDetectModal
+          onClose={() => setAutoDetectOpen(false)}
+          onAdded={handleAutoDetectAdded}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="absolute bottom-6 right-6 px-4 py-2 rounded font-data-label"
+          style={{
+            background: toast.kind === 'err' ? 'rgba(255,45,85,0.95)' : 'rgba(16,185,129,0.95)',
+            color: '#fff',
+            fontSize: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+            zIndex: 100,
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 };

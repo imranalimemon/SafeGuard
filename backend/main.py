@@ -66,7 +66,7 @@ async def startup_event():
     print(f"  WhatsApp alerts: {'ON' if settings.ENABLE_WHATSAPP_ALERTS else 'OFF'}")
     print(f"  Screenshots:     {settings.SCREENSHOT_DIR}")
     if settings.ALERT_DEBUG_MODE:
-        print(f"  Alert debug:     ON  → {settings.DEBUG_SMTP_HOST}:{settings.DEBUG_SMTP_PORT}, log={settings.DEBUG_LOG_FILE}")
+        print(f"  Alert debug:     ON  -> {settings.DEBUG_SMTP_HOST}:{settings.DEBUG_SMTP_PORT}, log={settings.DEBUG_LOG_FILE}")
         # Start the local aiosmtpd receiver so email_service.py can deliver
         # to it. Failure to bind is logged but does not abort startup —
         # email_service.py will fall back to file-only logging.
