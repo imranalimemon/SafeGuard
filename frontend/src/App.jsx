@@ -26,7 +26,7 @@ function App() {
           marginTop: '64px',
           marginBottom: '32px',
           height: 'calc(100vh - 64px - 32px)',
-          background: '#0b0f19',
+          background: 'var(--color-background)',
         }}
       >
         <Routes>

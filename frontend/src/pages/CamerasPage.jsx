@@ -30,14 +30,14 @@ const StatusBadge = ({ online }) => (
 const TypeBadge = ({ type }) => (
   <span
     className="px-2 py-0.5 rounded font-data-label uppercase tracking-wider"
-    style={{ fontSize: '10px', background: '#313540', border: '1px solid rgba(90,65,54,0.5)', color: '#94A3B8' }}
+    style={{ fontSize: '10px', background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline-variant)', color: 'var(--color-on-surface-variant)' }}
   >
     {type || 'webcam'}
   </span>
 );
 
 const Label = ({ children }) => (
-  <label className="font-data-label uppercase" style={{ color: '#94A3B8', fontSize: '10px' }}>{children}</label>
+  <label className="font-data-label uppercase" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{children}</label>
 );
 
 const TextInput = ({ value, onChange, type = 'text', placeholder = '', disabled = false }) => (
@@ -49,13 +49,13 @@ const TextInput = ({ value, onChange, type = 'text', placeholder = '', disabled 
     disabled={disabled}
     className="w-full rounded px-3 py-2 font-body-sm transition-all outline-none disabled:opacity-50"
     style={{
-      background: '#0a0e18',
-      border: '1px solid rgba(90,65,54,0.5)',
-      color: '#dfe2f1',
+      background: 'var(--color-surface-container-lowest)',
+      border: '1px solid var(--color-outline)',
+      color: 'var(--color-on-surface)',
       fontSize: '13px',
     }}
     onFocus={(e) => { e.target.style.borderColor = '#FF6B00'; }}
-    onBlur={(e) => { e.target.style.borderColor = 'rgba(90,65,54,0.5)'; }}
+    onBlur={(e) => { e.target.style.borderColor = 'var(--color-outline)'; }}
   />
 );
 
@@ -64,7 +64,7 @@ const SelectInput = ({ value, onChange, options }) => (
     value={value}
     onChange={onChange}
     className="w-full rounded px-2 py-2 font-data-value outline-none"
-    style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', fontSize: '12px' }}
+    style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)', color: 'var(--color-on-surface)', fontSize: '12px' }}
   >
     {options.map((o) => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}
   </select>
@@ -73,7 +73,7 @@ const SelectInput = ({ value, onChange, options }) => (
 /* ── Camera Card ─────────────────────────────────────────── */
 const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus, onTest }) => {
   const online = camera.enabled;
-  const stripeColor = online ? (isSelected ? '#FF6B00' : '#94A3B8') : '#FF2D55';
+  const stripeColor = online ? (isSelected ? '#FF6B00' : 'var(--color-slate-gray)') : '#FF2D55';
 
   return (
     <div
@@ -84,8 +84,8 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-headline-sm" style={{ color: online ? '#fff' : '#94A3B8', fontSize: '15px' }}>{camera.name}</h3>
-          <p className="font-data-label flex items-center gap-1 mt-1" style={{ color: '#94A3B8', fontSize: '11px' }}>
+          <h3 className="font-headline-sm" style={{ color: online ? 'var(--color-on-surface)' : 'var(--color-on-surface-variant)', fontSize: '15px' }}>{camera.name}</h3>
+          <p className="font-data-label flex items-center gap-1 mt-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>
             <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>router</span>
             {camera.url || `192.168.1.${camera.id}`}
           </p>
@@ -99,24 +99,24 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
       {/* Thumbnail */}
       <div
         className="rounded aspect-video flex items-center justify-center relative overflow-hidden"
-        style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(90,65,54,0.3)' }}
+        style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid var(--color-outline-variant)' }}
       >
         {online ? (
           <>
-            <span className="material-symbols-outlined z-10" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '36px' }}>videocam</span>
+            <span className="material-symbols-outlined z-10" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.4, fontSize: '36px' }}>videocam</span>
             <div className="absolute bottom-2 left-2 flex gap-1.5 z-10">
-              <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px', backdropFilter: 'blur(4px)' }}>
+              <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--color-on-surface)', fontSize: '10px', border: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(4px)' }}>
                 {camera.resolution || '1080p'}
               </span>
-              <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px', backdropFilter: 'blur(4px)' }}>
+              <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--color-on-surface)', fontSize: '10px', border: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(4px)' }}>
                 {camera.frame_rate || '30'}fps
               </span>
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center text-center">
-            <span className="material-symbols-outlined mb-1" style={{ color: '#94A3B8', fontSize: '28px' }}>videocam_off</span>
-            <span className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>Signal Lost</span>
+            <span className="material-symbols-outlined mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '28px' }}>videocam_off</span>
+            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Signal Lost</span>
           </div>
         )}
       </div>
@@ -126,15 +126,15 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
         <button
           onClick={() => onTest(camera.id)}
           disabled={testStatus?.loading}
-          className="flex-1 font-data-label uppercase tracking-wider px-2 py-1.5 rounded transition-colors"
-          style={{ fontSize: '10px', border: '1px solid rgba(90,65,54,0.5)', color: testStatus?.ok === true ? '#10B981' : testStatus?.ok === false ? '#FF2D55' : '#94A3B8', background: 'transparent' }}
+          className="flex-1 font-data-label uppercase tracking-wider px-2 py-1.5 rounded transition-colors hover:text-on-surface"
+          style={{ fontSize: '10px', border: '1px solid var(--color-outline)', color: testStatus?.ok === true ? '#10B981' : testStatus?.ok === false ? '#FF2D55' : 'var(--color-on-surface-variant)', background: 'transparent' }}
         >
           {testStatus?.loading ? '...' : testStatus?.ok === true ? '✓ OK' : testStatus?.ok === false ? '✗ Fail' : 'Test'}
         </button>
         <button
           onClick={() => onEdit(camera)}
-          className="flex-1 font-data-label uppercase tracking-wider px-2 py-1.5 rounded transition-colors"
-          style={{ fontSize: '10px', border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', background: 'transparent' }}
+          className="flex-1 font-data-label uppercase tracking-wider px-2 py-1.5 rounded transition-colors hover:text-on-surface"
+          style={{ fontSize: '10px', border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', background: 'transparent' }}
         >
           Edit
         </button>
@@ -155,13 +155,13 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
   const [ptzEnabled, setPtzEnabled] = useState(form.ptz_enabled ?? false);
 
   return (
-    <div className="w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'rgba(30,41,59,0.6)', backdropFilter: 'blur(12px)', borderLeft: '1px solid #334155' }}>
+    <div className="w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline-variant)' }}>
       {/* Header */}
-      <div className="px-4 py-3 flex justify-between items-center" style={{ background: 'rgba(10,14,24,0.5)', borderBottom: '1px solid rgba(90,65,54,0.5)' }}>
-        <h2 className="font-headline-sm" style={{ color: '#fff', fontSize: '16px' }}>
+      <div className="px-4 py-3 flex justify-between items-center" style={{ background: 'var(--color-surface-container)', borderBottom: '1px solid var(--color-outline-variant)' }}>
+        <h2 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '16px' }}>
           {editing ? 'Edit Camera' : 'Add Camera'}
         </h2>
-        <button onClick={onClose} style={{ color: '#94A3B8' }} className="hover:text-white transition-colors">
+        <button onClick={onClose} style={{ color: 'var(--color-on-surface-variant)' }} className="hover:text-on-surface transition-colors">
           <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>close</span>
         </button>
       </div>
@@ -173,7 +173,7 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
 
         {/* Technical Specs */}
         <div>
-          <h3 className="font-data-label uppercase tracking-wider pb-2 mb-3" style={{ color: '#FF6B00', borderBottom: '1px solid rgba(90,65,54,0.3)', fontSize: '11px' }}>
+          <h3 className="font-data-label uppercase tracking-wider pb-2 mb-3" style={{ color: '#FF6B00', borderBottom: '1px solid var(--color-outline-variant)', fontSize: '11px' }}>
             Technical Specs
           </h3>
           <div className="flex flex-col gap-3">
@@ -223,14 +223,14 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
                 <button
                   onClick={() => onChange('enabled', !form.enabled)}
                   className="w-10 h-5 rounded-full relative transition-colors"
-                  style={{ background: form.enabled ? '#FF6B00' : '#313540' }}
+                  style={{ background: form.enabled ? '#FF6B00' : 'var(--color-surface-container-high)' }}
                 >
                   <div
                     className="w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all"
                     style={{ left: form.enabled ? '22px' : '2px' }}
                   />
                 </button>
-                <span className="font-data-label" style={{ color: '#94A3B8', fontSize: '11px' }}>{form.enabled ? 'ENABLED' : 'DISABLED'}</span>
+                <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>{form.enabled ? 'ENABLED' : 'DISABLED'}</span>
               </div>
             </div>
           </div>
@@ -238,16 +238,16 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
 
         {/* PTZ Controls */}
         <div>
-          <div className="flex justify-between items-center pb-2 mb-3" style={{ borderBottom: '1px solid rgba(90,65,54,0.3)' }}>
+          <div className="flex justify-between items-center pb-2 mb-3" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
             <h3 className="font-data-label uppercase tracking-wider" style={{ color: '#FF6B00', fontSize: '11px' }}>PTZ Control</h3>
             <div className="flex items-center gap-2">
-              <span className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>{ptzEnabled ? 'ENABLED' : 'DISABLED'}</span>
+              <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{ptzEnabled ? 'ENABLED' : 'DISABLED'}</span>
               <button
                 onClick={() => setPtzEnabled(!ptzEnabled)}
                 className="w-8 h-4 rounded-full relative transition-colors"
-                style={{ background: ptzEnabled ? '#FF6B00' : '#313540' }}
+                style={{ background: ptzEnabled ? '#FF6B00' : 'var(--color-surface-container-high)' }}
               >
-                <div className="w-3 h-3 rounded-full bg-black absolute top-0.5 transition-all" style={{ left: ptzEnabled ? '18px' : '2px' }} />
+                <div className="w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all" style={{ left: ptzEnabled ? '18px' : '2px' }} />
               </button>
             </div>
           </div>
@@ -256,27 +256,27 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
             <>
               {/* D-Pad */}
               <div className="flex justify-center my-2">
-                <div className="relative w-28 h-28 rounded-full flex items-center justify-center" style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.5)' }}>
+                <div className="relative w-28 h-28 rounded-full flex items-center justify-center" style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)' }}>
                   {[
                     { icon: 'keyboard_arrow_up',    style: { top: '6px', left: '50%', transform: 'translateX(-50%)' } },
                     { icon: 'keyboard_arrow_down',  style: { bottom: '6px', left: '50%', transform: 'translateX(-50%)' } },
                     { icon: 'keyboard_arrow_left',  style: { left: '6px', top: '50%', transform: 'translateY(-50%)' } },
                     { icon: 'keyboard_arrow_right', style: { right: '6px', top: '50%', transform: 'translateY(-50%)' } },
                   ].map(({ icon, style }) => (
-                    <button key={icon} className="absolute p-0 transition-colors hover:text-orange-500" style={{ color: '#94A3B8', ...style }}>
+                    <button key={icon} className="absolute p-0 transition-colors hover:text-orange-500" style={{ color: 'var(--color-on-surface-variant)', ...style }}>
                       <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>{icon}</span>
                     </button>
                   ))}
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#313540', border: '1px solid rgba(90,65,54,0.5)' }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline-variant)' }}>
                     <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,107,0,0.5)' }} />
                   </div>
                 </div>
               </div>
               {/* Zoom */}
               <div className="flex items-center gap-3 mt-3">
-                <span className="material-symbols-outlined" style={{ color: '#94A3B8', fontSize: '16px' }}>zoom_out</span>
+                <span className="material-symbols-outlined" style={{ color: 'var(--color-on-surface-variant)', fontSize: '16px' }}>zoom_out</span>
                 <input type="range" min="1" max="10" defaultValue="1" className="flex-1" style={{ accentColor: '#FF6B00' }} />
-                <span className="material-symbols-outlined" style={{ color: '#94A3B8', fontSize: '16px' }}>zoom_in</span>
+                <span className="material-symbols-outlined" style={{ color: 'var(--color-on-surface-variant)', fontSize: '16px' }}>zoom_in</span>
               </div>
             </>
           )}
@@ -284,11 +284,11 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
       </div>
 
       {/* Footer buttons */}
-      <div className="p-4 flex gap-3" style={{ background: 'rgba(10,14,24,0.5)', borderTop: '1px solid rgba(90,65,54,0.5)' }}>
+      <div className="p-4 flex gap-3" style={{ background: 'var(--color-surface-container)', borderTop: '1px solid var(--color-outline-variant)' }}>
         <button
           onClick={onClose}
-          className="flex-1 py-2 rounded font-data-label uppercase tracking-wider transition-colors"
-          style={{ border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', fontSize: '11px', background: 'transparent' }}
+          className="flex-1 py-2 rounded font-data-label uppercase tracking-wider transition-colors hover:text-on-surface"
+          style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent' }}
         >
           Cancel
         </button>
@@ -400,17 +400,17 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
   const totalFound = (results.local?.length || 0) + (results.onvif?.length || 0);
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-      <div className="flex flex-col rounded-lg overflow-hidden w-[640px] max-w-[92vw] max-h-[80vh]" style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155' }}>
+    <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)' }}>
+      <div className="flex flex-col rounded-lg overflow-hidden w-[640px] max-w-[92vw] max-h-[80vh] animate-slide-up" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
         {/* Header */}
-        <div className="px-5 py-3 flex justify-between items-center" style={{ borderBottom: '1px solid rgba(90,65,54,0.5)' }}>
+        <div className="px-5 py-3 flex justify-between items-center" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
           <div>
-            <h2 className="font-headline-sm" style={{ color: '#fff', fontSize: '16px' }}>Auto-Detect Cameras</h2>
-            <p className="font-data-value mt-0.5" style={{ color: '#94A3B8', fontSize: '11px' }}>
+            <h2 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '16px' }}>Auto-Detect Cameras</h2>
+            <p className="font-data-value mt-0.5" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>
               Local webcams + ONVIF network scan
             </p>
           </div>
-          <button onClick={onClose} style={{ color: '#94A3B8' }} className="hover:text-white transition-colors">
+          <button onClick={onClose} style={{ color: 'var(--color-on-surface-variant)' }} className="hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>close</span>
           </button>
         </div>
@@ -448,19 +448,19 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
 
               {results.local?.length > 0 && (
                 <div>
-                  <h3 className="font-data-label uppercase tracking-wider pb-2 mb-2" style={{ color: '#FF6B00', borderBottom: '1px solid rgba(90,65,54,0.3)', fontSize: '11px' }}>
+                  <h3 className="font-data-label uppercase tracking-wider pb-2 mb-2" style={{ color: '#FF6B00', borderBottom: '1px solid var(--color-outline-variant)', fontSize: '11px' }}>
                     Local Webcams ({results.local.length})
                   </h3>
                   <div className="flex flex-col gap-2">
                     {results.local.map((c) => {
                       const k = localKey(c);
                       return (
-                        <label key={k} className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-colors" style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.3)' }}>
+                        <label key={k} className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-colors" style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline-variant)' }}>
                           <input type="checkbox" checked={isSelected(k)} onChange={() => toggle(k)} style={{ accentColor: '#FF6B00' }} />
                           <span className="material-symbols-outlined" style={{ color: '#FF6B00', fontSize: '18px' }}>videocam</span>
                           <div className="flex-1">
-                            <p className="font-data-value" style={{ color: '#dfe2f1', fontSize: '12px' }}>Webcam {c.index}</p>
-                            <p className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>{c.width}x{c.height} · {c.backend}</p>
+                            <p className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>Webcam {c.index}</p>
+                            <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{c.width}x{c.height} · {c.backend}</p>
                           </div>
                         </label>
                       );
@@ -471,21 +471,21 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
 
               {results.onvif?.length > 0 && (
                 <div>
-                  <h3 className="font-data-label uppercase tracking-wider pb-2 mb-2" style={{ color: '#FF6B00', borderBottom: '1px solid rgba(90,65,54,0.3)', fontSize: '11px' }}>
+                  <h3 className="font-data-label uppercase tracking-wider pb-2 mb-2" style={{ color: '#FF6B00', borderBottom: '1px solid var(--color-outline-variant)', fontSize: '11px' }}>
                     ONVIF Cameras ({results.onvif.length})
                   </h3>
                   <div className="flex flex-col gap-2">
                     {results.onvif.map((c) => {
                       const k = onvifKey(c);
                       return (
-                        <label key={k} className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-colors" style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.3)' }}>
+                        <label key={k} className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-colors" style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline-variant)' }}>
                           <input type="checkbox" checked={isSelected(k)} onChange={() => toggle(k)} style={{ accentColor: '#FF6B00' }} />
                           <span className="material-symbols-outlined" style={{ color: '#FF6B00', fontSize: '18px' }}>router</span>
                           <div className="flex-1 min-w-0">
-                            <p className="font-data-value truncate" style={{ color: '#dfe2f1', fontSize: '12px' }}>
+                            <p className="font-data-value truncate" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>
                               {c.manufacturer || 'Unknown'} {c.model ? `· ${c.model}` : ''}
                             </p>
-                            <p className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>
+                            <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>
                               {c.ip}:{c.port}
                             </p>
                           </div>
@@ -512,8 +512,8 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 flex gap-3 justify-end" style={{ borderTop: '1px solid rgba(90,65,54,0.5)', background: 'rgba(10,14,24,0.5)' }}>
-          <button onClick={onClose} className="px-4 py-2 rounded font-data-label uppercase tracking-wider" style={{ border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', fontSize: '11px', background: 'transparent' }}>
+        <div className="px-5 py-3 flex gap-3 justify-end" style={{ borderTop: '1px solid var(--color-outline-variant)', background: 'var(--color-surface-container)' }}>
+          <button onClick={onClose} className="px-4 py-2 rounded font-data-label uppercase tracking-wider hover:text-on-surface" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent' }}>
             Cancel
           </button>
           <button
@@ -634,20 +634,20 @@ const CamerasPage = () => {
       {/* Page Header */}
       <div
         className="px-6 py-5 flex justify-between items-end flex-shrink-0"
-        style={{ borderBottom: '1px solid rgba(90,65,54,0.3)', background: 'rgba(10,14,24,0.6)', backdropFilter: 'blur(8px)' }}
+        style={{ borderBottom: '1px solid var(--color-outline-variant)', background: 'var(--color-surface)', backdropFilter: 'blur(8px)' }}
       >
         <div>
-          <h1 className="font-display-lg" style={{ color: '#fff', fontSize: '32px', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif', fontWeight: 700 }}>
+          <h1 className="font-display-lg" style={{ color: 'var(--color-on-surface)', fontSize: '32px', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif', fontWeight: 700 }}>
             Camera Management
           </h1>
-          <p className="font-data-value mt-1" style={{ color: '#94A3B8', fontSize: '12px' }}>
+          <p className="font-data-value mt-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
             Manage IP, RTSP and webcam feeds across all sectors.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="glass-panel flex items-center gap-2 px-3 py-1.5 rounded">
             <span className="w-2 h-2 rounded-full" style={{ background: '#10B981', boxShadow: '0 0 8px #10B981' }} />
-            <span className="font-data-label" style={{ color: '#94A3B8', fontSize: '11px' }}>SYSTEM ONLINE</span>
+            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>SYSTEM ONLINE</span>
           </div>
           <button
             onClick={() => setAutoDetectOpen(true)}
@@ -674,12 +674,12 @@ const CamerasPage = () => {
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <span className="font-data-label" style={{ color: '#94A3B8' }}>Loading cameras…</span>
+              <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>Loading cameras…</span>
             </div>
           ) : cameras.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">
-              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#313540' }}>videocam_off</span>
-              <p className="font-headline-sm" style={{ color: '#94A3B8' }}>No cameras configured</p>
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-surface-container-highest)' }}>videocam_off</span>
+              <p className="font-headline-sm" style={{ color: 'var(--color-on-surface-variant)' }}>No cameras configured</p>
               <button onClick={openAdd} className="px-6 py-2 rounded font-data-label uppercase tracking-wider" style={{ background: '#FF6B00', color: '#000', fontSize: '11px', fontWeight: 700 }}>
                 + Add First Camera
               </button>

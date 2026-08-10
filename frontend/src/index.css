@@ -8,68 +8,94 @@
   --font-display: "Geist", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* --- SafeGuard Dark Industrial Palette --- */
-  --color-background: #0f131d;
-  --color-surface: #0f131d;
-  --color-surface-dim: #0f131d;
-  --color-surface-bright: #353944;
-  --color-surface-container-lowest: #0a0e18;
-  --color-surface-container-low: #171b26;
-  --color-surface-container: #1c1f2a;
-  --color-surface-container-high: #262a35;
-  --color-surface-container-highest: #313540;
-  --color-surface-variant: #313540;
+  /* --- SafeGuard Light Industrial Palette --- */
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-dim: #f1f5f9;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container: #f1f5f9;
+  --color-surface-container-high: #e2e8f0;
+  --color-surface-container-highest: #cbd5e1;
+  --color-surface-variant: #e2e8f0;
 
   /* --- Primary (orange) --- */
-  --color-primary: #ffb693;
-  --color-primary-container: #ff6b00;
+  --color-primary: #e65c00;
+  --color-primary-container: #ffebd5;
   --color-primary-fixed: #ffdbcc;
   --color-primary-fixed-dim: #ffb693;
-  --color-on-primary: #561f00;
-  --color-on-primary-container: #572000;
-  --color-inverse-primary: #a04100;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #4a1d00;
+  --color-inverse-primary: #ff6b00;
 
   /* --- Brand Colors --- */
   --color-safety-orange: #FF6B00;
   --color-compliance-green: #10B981;
   --color-critical-red: #FF2D55;
-  --color-data-blue: #44DCEA;
-  --color-slate-gray: #94A3B8;
+  --color-data-blue: #0284c7;
+  --color-slate-gray: #64748b;
 
   /* --- Surface text --- */
-  --color-on-surface: #dfe2f1;
-  --color-on-surface-variant: #e2bfb0;
-  --color-on-background: #dfe2f1;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-on-background: #0f172a;
 
   /* --- Secondary --- */
-  --color-secondary: #bcc7de;
-  --color-secondary-container: #3e495d;
-  --color-on-secondary: #263143;
-  --color-on-secondary-container: #aeb9d0;
+  --color-secondary: #475569;
+  --color-secondary-container: #e2e8f0;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #0f172a;
 
   /* --- Tertiary --- */
-  --color-tertiary: #40d9e7;
-  --color-tertiary-container: #00a9b5;
-  --color-on-tertiary: #00363b;
-  --color-on-tertiary-container: #00373c;
+  --color-tertiary: #0ea5e9;
+  --color-tertiary-container: #e0f2fe;
+  --color-on-tertiary: #0369a1;
+  --color-on-tertiary-container: #0369a1;
 
   /* --- Error --- */
-  --color-error: #ffb4ab;
-  --color-error-container: #93000a;
-  --color-on-error: #690005;
-  --color-on-error-container: #ffdad6;
+  --color-error: #FF2D55;
+  --color-error-container: #ffe4e6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #9f1239;
 
   /* --- Outline --- */
-  --color-outline: #a98a7d;
-  --color-outline-variant: #5a4136;
+  --color-outline: #cbd5e1;
+  --color-outline-variant: #e2e8f0;
+
+  /* --- SafeGuard Class Aliases (for existing bg-sg-* and text-sg-* classes) --- */
+  --color-sg-background: var(--color-background);
+  --color-sg-surface: var(--color-surface);
+  --color-sg-surface-dim: var(--color-surface-dim);
+  --color-sg-surface-bright: var(--color-surface-bright);
+  --color-sg-surface-container-lowest: var(--color-surface-container-lowest);
+  --color-sg-surface-container-low: var(--color-surface-container-low);
+  --color-sg-surface-container: var(--color-surface-container);
+  --color-sg-surface-container-high: var(--color-surface-container-high);
+  --color-sg-surface-container-highest: var(--color-surface-container-highest);
+  --color-sg-surface-variant: var(--color-surface-variant);
+  --color-sg-on-surface: var(--color-on-surface);
+  --color-sg-on-surface-variant: var(--color-on-surface-variant);
+  --color-sg-outline: var(--color-outline);
+  --color-sg-outline-variant: var(--color-outline-variant);
+  --color-sg-primary: var(--color-primary);
+  --color-sg-primary-container: var(--color-primary-container);
+  --color-sg-on-primary: var(--color-on-primary);
+  --color-sg-primary-fixed-dim: var(--color-primary-fixed-dim);
+  --color-sg-tertiary: var(--color-tertiary);
+  --color-sg-tertiary-container: var(--color-tertiary-container);
+  --color-sg-on-tertiary: var(--color-on-tertiary);
+  --color-sg-error: var(--color-error);
+  --color-sg-error-container: var(--color-error-container);
+  --color-sg-on-error: var(--color-on-error);
 }
 
 /* ---- Base ---- */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
-  background-color: #0f131d;
-  color: #dfe2f1;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
   font-family: "Inter", sans-serif;
   margin: 0;
   padding: 0;
@@ -78,8 +104,8 @@ body {
 /* ---- Custom Scrollbar ---- */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #313540; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-thumb { background: var(--color-surface-container-highest); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-slate-gray); }
 
 /* ---- Material Symbols ---- */
 .material-symbols-outlined {
@@ -93,10 +119,10 @@ body {
 
 /* ---- Glass Panel ---- */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #334155;
+  border: 1px solid var(--color-outline-variant);
 }
 
 /* ---- Scanline Overlay (CCTV effect) ---- */

@@ -8,18 +8,18 @@ const SELECTED_CAMERA_KEY = 'sg_selected_camera';
 const Gauge = ({ label, value, max = 100, color = '#10B981', icon = 'verified_user' }) => (
   <div
     className="rounded p-4 relative overflow-hidden"
-    style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.5)' }}
+    style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}
   >
     <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l" style={{ background: color }} />
     <div className="flex justify-between items-center mb-3 pl-2">
-      <h3 className="font-headline-sm" style={{ color: '#dfe2f1', fontSize: '16px' }}>{label}</h3>
+      <h3 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '16px' }}>{label}</h3>
       <span className="material-symbols-outlined" style={{ color, fontSize: '20px' }}>{icon}</span>
     </div>
     <div className="pl-2 flex items-end gap-1 mb-3">
-      <span style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '40px', color: '#fff', lineHeight: 1 }}>{value}</span>
-      {typeof value === 'number' && <span className="font-data-value mb-1" style={{ color: '#94A3B8' }}>%</span>}
+      <span style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '40px', color: 'var(--color-on-surface)', lineHeight: 1 }}>{value}</span>
+      {typeof value === 'number' && <span className="font-data-value mb-1" style={{ color: 'var(--color-on-surface-variant)' }}>%</span>}
     </div>
-    <div className="pl-2 w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#262a35' }}>
+    <div className="pl-2 w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-container-high)' }}>
       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(value, 100)}%`, background: color }} />
     </div>
   </div>
@@ -28,14 +28,14 @@ const Gauge = ({ label, value, max = 100, color = '#10B981', icon = 'verified_us
 const StatTile = ({ label, value, accent = false }) => (
   <div
     className="rounded p-4 relative"
-    style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.5)' }}
+    style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}
   >
     {accent && <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l" style={{ background: '#FF2D55' }} />}
     <div className={accent ? 'pl-2' : ''}>
-      <div className="font-data-label mb-2" style={{ color: '#94A3B8' }}>{label}</div>
+      <div className="font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)' }}>{label}</div>
       <div
         className="font-headline-md"
-        style={{ color: accent ? '#FF2D55' : '#fff', fontSize: '22px', fontFamily: 'Geist, sans-serif', fontWeight: 600, ...(accent ? { animation: 'pulse 2s infinite' } : {}) }}
+        style={{ color: accent ? '#FF2D55' : 'var(--color-on-surface)', fontSize: '22px', fontFamily: 'Geist, sans-serif', fontWeight: 600, ...(accent ? { animation: 'pulse 2s infinite' } : {}) }}
       >
         {value}
       </div>
@@ -46,23 +46,23 @@ const StatTile = ({ label, value, accent = false }) => (
 const MiniBar = ({ label, value, color }) => (
   <div>
     <div className="flex justify-between items-center mb-1">
-      <span className="font-data-value" style={{ color: '#e2bfb0', fontSize: '12px' }}>{label}</span>
-      <span className="font-data-value" style={{ color: '#fff', fontSize: '12px' }}>{value}%</span>
+      <span className="font-data-value" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>{label}</span>
+      <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>{value}%</span>
     </div>
-    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#262a35' }}>
+    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-container-high)' }}>
       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
     </div>
   </div>
 );
 
 const IncidentItem = ({ type, camera, confidence, time, severity = 'critical', resolved = false }) => {
-  const borderColor = severity === 'critical' ? '#FF2D55' : severity === 'warn' ? '#FF6B00' : '#94A3B8';
-  const typeColor   = severity === 'critical' ? '#FF2D55' : severity === 'warn' ? '#FF6B00' : '#94A3B8';
+  const borderColor = severity === 'critical' ? '#FF2D55' : severity === 'warn' ? '#FF6B00' : 'var(--color-outline)';
+  const typeColor   = severity === 'critical' ? '#FF2D55' : severity === 'warn' ? '#FF6B00' : 'var(--color-on-surface-variant)';
   return (
     <div
       className="p-3 cursor-pointer transition-colors"
       style={{
-        borderBottom: '1px solid rgba(90,65,54,0.3)',
+        borderBottom: '1px solid var(--color-outline-variant)',
         borderLeft: `2px solid ${borderColor}`,
         background: resolved ? 'transparent' : severity === 'critical' ? 'rgba(255,45,85,0.05)' : 'transparent',
         opacity: resolved ? 0.55 : 1,
@@ -70,9 +70,9 @@ const IncidentItem = ({ type, camera, confidence, time, severity = 'critical', r
     >
       <div className="flex justify-between items-start mb-1">
         <span className="font-data-label font-bold" style={{ color: typeColor }}>{type}</span>
-        <span className="font-data-value" style={{ color: '#94A3B8', fontSize: '10px' }}>{time}</span>
+        <span className="font-data-value" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{time}</span>
       </div>
-      <div style={{ fontSize: '12px', color: '#94A3B8', marginBottom: resolved || severity === 'warn' ? 0 : '8px' }}>
+      <div style={{ fontSize: '12px', color: 'var(--color-on-surface-variant)', marginBottom: resolved || severity === 'warn' ? 0 : '8px' }}>
         {camera}{confidence ? ` · CONF ${confidence}%` : ''}
         {resolved ? ' · RESOLVED' : ''}
       </div>
@@ -80,7 +80,7 @@ const IncidentItem = ({ type, camera, confidence, time, severity = 'critical', r
         <div className="flex gap-2">
           <button
             className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors"
-            style={{ fontSize: '10px', background: '#262a35', border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1' }}
+            style={{ fontSize: '10px', background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
           >
             Acknowledge
           </button>
@@ -100,20 +100,20 @@ const IncidentItem = ({ type, camera, confidence, time, severity = 'critical', r
 const CamTile = ({ id, label, active = false, offline = false, frame = null, isStreaming = false }) => {
   const borderStyle = active
     ? { border: '1px solid #FF6B00' }
-    : { border: '1px solid rgba(90,65,54,0.5)' };
+    : { border: '1px solid var(--color-outline-variant)' };
 
   return (
     <div
       className={`relative rounded overflow-hidden group ${active && isStreaming ? 'pulse-glow' : ''}`}
-      style={{ background: '#0f131d', ...borderStyle, minHeight: '180px' }}
+      style={{ background: 'var(--color-surface)', ...borderStyle, minHeight: '180px' }}
     >
       {/* Scanline */}
       <div className="absolute inset-0 scanline z-10 pointer-events-none" />
 
       {offline ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20" style={{ background: '#1c1f2a' }}>
-          <span className="material-symbols-outlined mb-2" style={{ color: '#94A3B8', fontSize: '36px' }}>videocam_off</span>
-          <span className="font-data-label" style={{ color: '#94A3B8' }}>SIGNAL LOST — {id}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20" style={{ background: 'var(--color-surface-container)' }}>
+          <span className="material-symbols-outlined mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '36px' }}>videocam_off</span>
+          <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>SIGNAL LOST — {id}</span>
         </div>
       ) : (
         <>
@@ -268,14 +268,14 @@ const DashboardPage = () => {
       <section className="flex-1 grid grid-cols-2 gap-2 p-4 h-full overflow-hidden">
 
         {/* CAM-01: Primary / Active feed */}
-        <div className="relative rounded overflow-hidden group" style={{ border: `1px solid #FF6B00`, background: '#0f131d', minHeight: 0 }}>
+        <div className="relative rounded overflow-hidden group" style={{ border: `1px solid #FF6B00`, background: 'var(--color-surface)', minHeight: 0 }}>
           <div className="absolute inset-0 scanline z-10 pointer-events-none" />
           {isStreaming && frame ? (
             <img src={frame} alt="Live feed" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.85 }} />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: 'rgba(15,19,29,0.9)' }}>
-              <span className="material-symbols-outlined mb-3" style={{ color: '#94A3B8', fontSize: '40px' }}>videocam_off</span>
-              <p className="font-data-label" style={{ color: '#94A3B8' }}>NO SIGNAL — SELECT A CAMERA</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: 'rgba(248,250,252,0.92)' }}>
+              <span className="material-symbols-outlined mb-3" style={{ color: 'var(--color-on-surface-variant)', fontSize: '40px' }}>videocam_off</span>
+              <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>NO SIGNAL — SELECT A CAMERA</p>
               {cameras.length === 0 && (
                 <Link to="/cameras" className="mt-3 font-data-label" style={{ color: '#FF6B00', textDecoration: 'underline' }}>
                   Add a camera →
@@ -287,7 +287,7 @@ const DashboardPage = () => {
           {/* Top bar */}
           <div className="absolute top-0 left-0 w-full p-3 flex justify-between items-start z-20" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.85), transparent)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: isStreaming ? '#FF2D55' : '#94A3B8' }} />
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: isStreaming ? '#FF2D55' : 'var(--color-slate-gray)' }} />
               <span className="font-data-label px-2 py-0.5 rounded" style={{ color: '#fff', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '10px', letterSpacing: '0.08em' }}>
                 {cameras.find(c => c.id === Number(selectedCameraId))?.name || 'CAM-01 [Z-BAY]'}
               </span>
@@ -393,10 +393,10 @@ const DashboardPage = () => {
         {/* System Load */}
         <div
           className="rounded p-4 flex flex-col gap-3"
-          style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.5)' }}
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}
         >
           <div className="flex justify-between items-center">
-            <span className="font-data-label" style={{ color: '#94A3B8' }}>SYSTEM LOAD</span>
+            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>SYSTEM LOAD</span>
             <span className="font-data-label" style={{ color: '#FF6B00' }}>YOLOv8s ACTIVE</span>
           </div>
           <MiniBar label="GPU 0 (Orin)" value={82} color="#FF6B00" />
@@ -404,10 +404,10 @@ const DashboardPage = () => {
         </div>
 
         {/* Incident Log */}
-        <div className="rounded flex flex-col overflow-hidden flex-1 min-h-0" style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.5)' }}>
-          <div className="px-3 py-2 flex justify-between items-center" style={{ background: '#313540', borderBottom: '1px solid rgba(90,65,54,0.5)' }}>
-            <h4 className="font-data-label" style={{ color: '#94A3B8' }}>INCIDENT LOG</h4>
-            <span className="font-data-label px-2 py-0.5 rounded" style={{ background: '#262a35', color: '#94A3B8', fontSize: '10px' }}>LIVE</span>
+        <div className="rounded flex flex-col overflow-hidden flex-1 min-h-0" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+          <div className="px-3 py-2 flex justify-between items-center" style={{ background: 'var(--color-surface-container)', borderBottom: '1px solid var(--color-outline-variant)' }}>
+            <h4 className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>INCIDENT LOG</h4>
+            <span className="font-data-label px-2 py-0.5 rounded" style={{ background: 'var(--color-surface-container-high)', color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>LIVE</span>
           </div>
           <div className="flex-1 overflow-y-auto">
             {recentViolations.length > 0

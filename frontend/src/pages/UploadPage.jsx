@@ -25,23 +25,23 @@ const DetectionCard = ({ result, model }) => {
   const violating = stats.violations ?? violations.length;
 
   return (
-    <div className="rounded p-4 flex flex-col gap-3 animate-slide-up" style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.5)' }}>
+    <div className="rounded p-4 flex flex-col gap-3 animate-slide-up" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
       <div className="flex justify-between items-center">
-        <h3 className="font-headline-sm" style={{ color: '#fff', fontSize: '15px' }}>Detection Results</h3>
+        <h3 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '15px' }}>Detection Results</h3>
         <span className="font-data-label px-2 py-0.5 rounded" style={{ background: '#FF6B00', color: '#000', fontSize: '10px', fontWeight: 700 }}>
           {model || 'YOLOv8s'}
         </span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'PERSONS', value: persons, color: '#44DCEA' },
+          { label: 'PERSONS', value: persons, color: 'var(--color-data-blue)' },
           { label: 'VIOLATIONS', value: violating, color: violating > 0 ? '#FF2D55' : '#10B981' },
           // Inference time isn't tracked yet — render as `—` rather than a
           // bogus number from a missing field.
-          { label: 'INFER TIME', value: '—', color: '#94A3B8' },
+          { label: 'INFER TIME', value: '—', color: 'var(--color-on-surface-variant)' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded p-3 text-center" style={{ background: '#262a35', border: '1px solid rgba(90,65,54,0.3)' }}>
-            <div className="font-data-label mb-1" style={{ color: '#94A3B8', fontSize: '10px' }}>{label}</div>
+          <div key={label} className="rounded p-3 text-center" style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}>
+            <div className="font-data-label mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{label}</div>
             <div className="font-data-value" style={{ color, fontSize: '18px' }}>{value}</div>
           </div>
         ))}
@@ -66,13 +66,13 @@ const DetectionCard = ({ result, model }) => {
 
 /* ── Queue Item ──────────────────────────────────────────── */
 const QueueItem = ({ file, status }) => (
-  <div className="flex items-center gap-3 px-3 py-2 rounded" style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.3)' }}>
-    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#94A3B8' }}>
+  <div className="flex items-center gap-3 px-3 py-2 rounded" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-on-surface-variant)' }}>
       {file.type.startsWith('video') ? 'videocam' : 'image'}
     </span>
     <div className="flex-1 min-w-0">
-      <p className="font-data-value truncate" style={{ color: '#dfe2f1', fontSize: '12px' }}>{file.name}</p>
-      <p className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+      <p className="font-data-value truncate" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>{file.name}</p>
+      <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
     </div>
     <span
       className="font-data-label px-2 py-0.5 rounded"
@@ -138,19 +138,19 @@ const UploadPage = () => {
       {/* Page Header */}
       <div
         className="px-6 py-4 flex items-center justify-between flex-shrink-0 sticky top-0 z-10"
-        style={{ background: 'rgba(10,14,24,0.8)', borderBottom: '1px solid rgba(90,65,54,0.3)', backdropFilter: 'blur(8px)' }}
+        style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(8px)' }}
       >
         <div>
-          <h1 style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '28px', color: '#fff', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--color-on-surface)', letterSpacing: '-0.02em' }}>
             Upload &amp; Detect
           </h1>
-          <p className="font-data-value mt-0.5" style={{ color: '#94A3B8', fontSize: '12px' }}>
+          <p className="font-data-value mt-0.5" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
             Process static media through selected inference models.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded" style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.5)' }}>
+        <div className="flex items-center gap-2 px-4 py-2 rounded" style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}>
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#FF6B00' }} />
-          <span className="font-data-value" style={{ color: '#dfe2f1', fontSize: '12px' }}>YOLOv8s Active</span>
+          <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>YOLOv8s Active</span>
         </div>
       </div>
 
@@ -162,7 +162,7 @@ const UploadPage = () => {
           <div className="lg:col-span-2 flex flex-col gap-4">
 
             {/* Tabs */}
-            <div className="flex items-center" style={{ borderBottom: '1px solid rgba(90,65,54,0.5)' }}>
+            <div className="flex items-center" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
               {[
                 { id: 'image', label: 'Image Upload', icon: 'image' },
                 { id: 'video', label: 'Video Upload', icon: 'videocam' },
@@ -170,12 +170,12 @@ const UploadPage = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className="flex items-center gap-2 px-6 py-3 font-data-label uppercase tracking-wider transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 font-data-label uppercase tracking-wider transition-colors hover:text-on-surface"
                   style={{
                     fontSize: '11px',
-                    color: activeTab === tab.id ? '#FF6B00' : '#94A3B8',
+                    color: activeTab === tab.id ? '#FF6B00' : 'var(--color-on-surface-variant)',
                     borderBottom: activeTab === tab.id ? '2px solid #FF6B00' : '2px solid transparent',
-                    background: activeTab === tab.id ? 'rgba(255,107,0,0.05)' : 'transparent',
+                    background: activeTab === tab.id ? 'var(--color-primary-container)' : 'transparent',
                     fontWeight: activeTab === tab.id ? 700 : 500,
                   }}
                 >
@@ -194,8 +194,8 @@ const UploadPage = () => {
               className="relative rounded-lg flex flex-col items-center justify-center p-12 cursor-pointer group transition-all duration-200"
               style={{
                 minHeight: '320px',
-                border: `2px dashed ${isDragging ? '#FF6B00' : 'rgba(90,65,54,0.6)'}`,
-                background: isDragging ? 'rgba(255,107,0,0.04)' : 'rgba(23,27,38,0.4)',
+                border: `2px dashed ${isDragging ? '#FF6B00' : 'var(--color-outline)'}`,
+                background: isDragging ? 'var(--color-primary-container)' : 'var(--color-surface-container-low)',
               }}
             >
               {/* Corner accents — appear on hover/drag */}
@@ -205,17 +205,17 @@ const UploadPage = () => {
 
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mb-5 transition-colors"
-                style={{ background: isDragging ? 'rgba(255,107,0,0.2)' : '#313540' }}
+                style={{ background: isDragging ? 'rgba(255,107,0,0.2)' : 'var(--color-surface-container-high)' }}
               >
-                <span className="material-symbols-outlined transition-colors" style={{ fontSize: '32px', color: isDragging ? '#FF6B00' : '#94A3B8' }}>
+                <span className="material-symbols-outlined transition-colors" style={{ fontSize: '32px', color: isDragging ? '#FF6B00' : 'var(--color-on-surface-variant)' }}>
                   {isProcessing ? 'hourglass_top' : 'upload'}
                 </span>
               </div>
 
-              <h3 style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '20px', color: '#fff', marginBottom: '8px' }}>
+              <h3 style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '20px', color: 'var(--color-on-surface)', marginBottom: '8px' }}>
                 {isProcessing ? 'Processing…' : 'Drag & Drop media here'}
               </h3>
-              <p className="font-data-value mb-8" style={{ color: '#94A3B8', fontSize: '12px' }}>
+              <p className="font-data-value mb-8" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
                 Supported: {activeTab === 'image' ? 'JPG, PNG, WEBP' : 'MP4, AVI, MOV'} (Max 50MB)
               </p>
               <button
@@ -226,7 +226,7 @@ const UploadPage = () => {
                   color: '#000',
                   fontSize: '11px',
                   fontWeight: 700,
-                  boxShadow: '0 0 20px rgba(255,107,0,0.3)',
+                  boxShadow: '0 4px 12px rgba(255,107,0,0.2)',
                 }}
               >
                 Select File
@@ -250,20 +250,20 @@ const UploadPage = () => {
           <div className="flex flex-col gap-4">
 
             {/* Processing Configuration */}
-            <div className="rounded p-5" style={{ background: '#171b26', border: '1px solid rgba(90,65,54,0.5)' }}>
-              <h3 className="font-data-label uppercase tracking-widest mb-4 pb-2" style={{ color: '#FF6B00', fontSize: '11px', borderBottom: '1px solid rgba(90,65,54,0.3)' }}>
+            <div className="rounded p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+              <h3 className="font-data-label uppercase tracking-widest mb-4 pb-2" style={{ color: '#FF6B00', fontSize: '11px', borderBottom: '1px solid var(--color-outline-variant)' }}>
                 Processing Configuration
               </h3>
               <div className="flex flex-col gap-5">
 
                 {/* Model */}
                 <div>
-                  <label className="block font-data-label uppercase mb-2" style={{ color: '#94A3B8', fontSize: '10px' }}>Inference Model</label>
+                  <label className="block font-data-label uppercase mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Inference Model</label>
                   <select
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     className="w-full rounded px-2 py-2 font-data-value outline-none"
-                    style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', fontSize: '12px' }}
+                    style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)', color: 'var(--color-on-surface)', fontSize: '12px' }}
                   >
                     {MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                   </select>
@@ -271,20 +271,20 @@ const UploadPage = () => {
 
                 {/* Confidence Slider */}
                 <div>
-                  <label className="block font-data-label uppercase mb-2" style={{ color: '#94A3B8', fontSize: '10px' }}>Confidence Threshold</label>
+                  <label className="block font-data-label uppercase mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Confidence Threshold</label>
                   <div className="flex items-center gap-4">
                     <input
                       type="range" min={0} max={100} value={confidence}
                       onChange={(e) => setConfidence(Number(e.target.value))}
                       className="flex-1" style={{ accentColor: '#FF6B00' }}
                     />
-                    <span className="font-data-value" style={{ color: '#fff', fontSize: '13px', minWidth: '36px' }}>{confidence}%</span>
+                    <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '13px', minWidth: '36px' }}>{confidence}%</span>
                   </div>
                 </div>
 
                 {/* Detection Classes */}
                 <div>
-                  <label className="block font-data-label uppercase mb-2" style={{ color: '#94A3B8', fontSize: '10px' }}>Detection Classes</label>
+                  <label className="block font-data-label uppercase mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Detection Classes</label>
                   <div className="flex flex-col gap-2">
                     {CLASSES.map((cls) => (
                       <label key={cls} className="flex items-center gap-2 cursor-pointer">
@@ -295,7 +295,7 @@ const UploadPage = () => {
                           className="rounded"
                           style={{ accentColor: '#FF6B00' }}
                         />
-                        <span className="font-data-value" style={{ color: '#dfe2f1', fontSize: '13px' }}>{cls}</span>
+                        <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '13px' }}>{cls}</span>
                       </label>
                     ))}
                   </div>
@@ -304,14 +304,14 @@ const UploadPage = () => {
             </div>
 
             {/* Batch Queue */}
-            <div className="rounded p-5 flex-1 flex flex-col" style={{ background: '#171b26', border: '1px solid rgba(90,65,54,0.5)' }}>
-              <h3 className="font-data-label uppercase tracking-widest mb-4 pb-2" style={{ color: '#94A3B8', fontSize: '11px', borderBottom: '1px solid rgba(90,65,54,0.3)' }}>
+            <div className="rounded p-5 flex-1 flex flex-col" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+              <h3 className="font-data-label uppercase tracking-widest mb-4 pb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px', borderBottom: '1px solid var(--color-outline-variant)' }}>
                 Batch Queue
               </h3>
               {queue.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                  <span className="material-symbols-outlined mb-2" style={{ fontSize: '32px', color: '#94A3B8' }}>folder_open</span>
-                  <span className="font-data-label uppercase" style={{ color: '#94A3B8', fontSize: '10px' }}>Queue Empty</span>
+                  <span className="material-symbols-outlined mb-2" style={{ fontSize: '32px', color: 'var(--color-surface-container-highest)' }}>folder_open</span>
+                  <span className="font-data-label uppercase" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Queue Empty</span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">

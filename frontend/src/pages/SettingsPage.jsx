@@ -11,9 +11,9 @@ const REQUIRED_PPE = [
 
 /* ── Section heading ─────────────────────────────────────── */
 const SectionHeading = ({ icon, title, accent = true }) => (
-  <div className="flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: '1px solid rgba(90,65,54,0.3)' }}>
-    <span className="material-symbols-outlined" style={{ color: accent ? '#FF6B00' : '#94A3B8', fontSize: '20px' }}>{icon}</span>
-    <h3 className="font-headline-sm uppercase tracking-wider" style={{ color: accent ? '#fff' : '#94A3B8', fontSize: '14px' }}>{title}</h3>
+  <div className="flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
+    <span className="material-symbols-outlined" style={{ color: accent ? '#FF6B00' : 'var(--color-on-surface-variant)', fontSize: '20px' }}>{icon}</span>
+    <h3 className="font-headline-sm uppercase tracking-wider" style={{ color: accent ? 'var(--color-on-surface)' : 'var(--color-on-surface-variant)', fontSize: '14px' }}>{title}</h3>
   </div>
 );
 
@@ -23,18 +23,18 @@ const ToggleSwitch = ({ enabled, onChange, disabled = false }) => (
     onClick={() => !disabled && onChange(!enabled)}
     disabled={disabled}
     className="w-10 h-5 rounded-full relative transition-colors disabled:opacity-40"
-    style={{ background: enabled ? '#FF6B00' : '#313540' }}
+    style={{ background: enabled ? '#FF6B00' : 'var(--color-surface-container-high)' }}
   >
     <div
       className="w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all"
-      style={{ left: enabled ? '22px' : '2px', background: enabled ? '#000' : '#fff' }}
+      style={{ left: enabled ? '22px' : '2px' }}
     />
   </button>
 );
 
 /* ── Field helpers ───────────────────────────────────────── */
 const FieldLabel = ({ children }) => (
-  <label className="block font-data-label uppercase mb-1" style={{ color: '#94A3B8', fontSize: '10px' }}>{children}</label>
+  <label className="block font-data-label uppercase mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{children}</label>
 );
 
 const TextInput = ({ value, onChange, type = 'text', placeholder = '', disabled = false }) => (
@@ -45,9 +45,9 @@ const TextInput = ({ value, onChange, type = 'text', placeholder = '', disabled 
     placeholder={placeholder}
     disabled={disabled}
     className="w-full rounded px-3 py-2 font-data-value outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-    style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.5)', color: disabled ? '#94A3B8' : '#44DCEA', fontSize: '13px' }}
+    style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)', color: disabled ? 'var(--color-on-surface-variant)' : 'var(--color-on-surface)', fontSize: '13px' }}
     onFocus={(e) => { if (!disabled) e.target.style.borderColor = '#FF6B00'; }}
-    onBlur={(e) => { e.target.style.borderColor = 'rgba(90,65,54,0.5)'; }}
+    onBlur={(e) => { e.target.style.borderColor = 'var(--color-outline)'; }}
   />
 );
 
@@ -57,10 +57,10 @@ const AlertPanel = ({ title, icon, enabled, onToggle, fields, disabled = false }
     className="glass-panel rounded overflow-hidden"
     style={{ opacity: disabled ? 0.75 : 1, transition: 'opacity 0.2s' }}
   >
-    <div className="p-5" style={{ borderLeft: `2px solid ${enabled ? '#94A3B8' : 'rgba(90,65,54,0.4)'}`, background: 'rgba(10,14,24,0.4)' }}>
+    <div className="p-5" style={{ borderLeft: `2px solid ${enabled ? 'var(--color-slate-gray)' : 'var(--color-outline)'}`, background: 'var(--color-surface-container-low)' }}>
       <SectionHeading icon={icon} title={title} accent={false} />
       <div className="flex justify-between items-center mb-5">
-        <span className="font-data-label uppercase" style={{ color: '#94A3B8', fontSize: '11px' }}>Enable Notifications</span>
+        <span className="font-data-label uppercase" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>Enable Notifications</span>
         <ToggleSwitch enabled={enabled} onChange={onToggle} disabled={disabled} />
       </div>
       <div className="flex flex-col gap-4">
@@ -184,13 +184,13 @@ const SettingsPage = () => {
       {/* Page Header */}
       <div
         className="px-6 py-5 flex justify-between items-end flex-shrink-0"
-        style={{ background: 'rgba(10,14,24,0.7)', borderBottom: '1px solid rgba(90,65,54,0.3)', backdropFilter: 'blur(8px)' }}
+        style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(8px)' }}
       >
         <div>
-          <h1 className="font-display-lg" style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '32px', color: '#fff', letterSpacing: '-0.02em' }}>
+          <h1 className="font-display-lg" style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '32px', color: 'var(--color-on-surface)', letterSpacing: '-0.02em' }}>
             System Configuration
           </h1>
-          <p className="font-data-value mt-1" style={{ color: '#94A3B8', fontSize: '12px' }}>
+          <p className="font-data-value mt-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
             Manage global parameters for detection models, alert routing, and system access.
           </p>
         </div>
@@ -221,7 +221,7 @@ const SettingsPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex px-6 gap-1" style={{ borderBottom: '1px solid rgba(90,65,54,0.5)', background: 'rgba(10,14,24,0.4)', flexShrink: 0 }}>
+      <div className="flex px-6 gap-1" style={{ borderBottom: '1px solid var(--color-outline-variant)', background: 'var(--color-surface-container)', flexShrink: 0 }}>
         {TABS.map((tab) => (
           <button
             key={tab}
@@ -229,8 +229,8 @@ const SettingsPage = () => {
             className="px-5 py-2.5 font-headline-sm transition-colors"
             style={{
               fontSize: '14px',
-              color: activeTab === tab ? '#ffb693' : '#94A3B8',
-              borderBottom: activeTab === tab ? '2px solid #ffb693' : '2px solid transparent',
+              color: activeTab === tab ? 'var(--color-primary)' : 'var(--color-on-surface-variant)',
+              borderBottom: activeTab === tab ? '2px solid var(--color-primary)' : '2px solid transparent',
               background: 'transparent',
               fontWeight: activeTab === tab ? 700 : 400,
             }}
@@ -250,19 +250,19 @@ const SettingsPage = () => {
               {/* Left: Detection Confidence */}
               <div className="lg:col-span-8 flex flex-col gap-6">
                 <div className="glass-panel rounded overflow-hidden" style={{ borderLeft: '2px solid #FF6B00' }}>
-                  <div className="p-6" style={{ background: 'rgba(10,14,24,0.4)' }}>
+                  <div className="p-6" style={{ background: 'var(--color-surface-container-low)' }}>
                     <SectionHeading icon="tune" title="Detection Confidence" />
                     <div className="flex flex-col gap-8">
 
                       {/* Slider */}
                       <div>
                         <div className="flex justify-between items-center mb-4">
-                          <label className="font-data-label uppercase" style={{ color: '#94A3B8', fontSize: '11px' }}>
+                          <label className="font-data-label uppercase" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>
                             Base Confidence Threshold
                           </label>
                           <span
                             className="font-data-value px-2 py-1 rounded"
-                            style={{ color: '#FF6B00', background: '#262a35', border: '1px solid rgba(90,65,54,0.5)', fontSize: '13px' }}
+                            style={{ color: '#FF6B00', background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline)', fontSize: '13px' }}
                           >
                             {settings.confidenceThreshold}%
                           </span>
@@ -274,17 +274,17 @@ const SettingsPage = () => {
                           onChange={(e) => set('confidenceThreshold', Number(e.target.value))}
                           style={{ accentColor: '#FF6B00', width: '100%' }}
                         />
-                        <p className="font-data-label mt-2" style={{ color: 'rgba(148,163,184,0.7)', fontSize: '11px' }}>
+                        <p className="font-data-label mt-2" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
                           Lower values detect more objects but may increase false positives.
                         </p>
                       </div>
 
-                      <hr style={{ borderColor: 'rgba(90,65,54,0.3)' }} />
+                      <hr style={{ borderColor: 'var(--color-outline-variant)' }} />
 
                       {/* Always Required PPE */}
                       <div>
                         <h4 className="font-data-label uppercase tracking-wider mb-1" style={{ color: '#FF6B00', fontSize: '11px' }}>Always Required PPE</h4>
-                        <p className="font-data-label mb-4" style={{ color: 'rgba(148,163,184,0.7)', fontSize: '11px' }}>
+                        <p className="font-data-label mb-4" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
                           These items are always required and cannot be disabled in standard operating modes.
                         </p>
                         <div className="flex flex-col gap-2">
@@ -292,11 +292,11 @@ const SettingsPage = () => {
                             <div
                               key={ppe.name}
                               className="flex justify-between items-center p-3 rounded transition-colors"
-                              style={{ background: '#0a0e18', border: '1px solid rgba(90,65,54,0.5)' }}
+                              style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline-variant)' }}
                             >
                               <div className="flex items-center gap-3">
                                 <span className="material-symbols-outlined" style={{ color: '#10B981', fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>{ppe.icon}</span>
-                                <span className="font-body-sm font-bold" style={{ color: '#fff' }}>{ppe.name}</span>
+                                <span className="font-body-sm font-bold" style={{ color: 'var(--color-on-surface)' }}>{ppe.name}</span>
                               </div>
                               <span
                                 className="font-data-label px-2 py-1 rounded"
@@ -336,8 +336,8 @@ const SettingsPage = () => {
                           <button
                             onClick={() => handleSendTest('email')}
                             disabled={testInFlight.email}
-                            className="w-full py-2 rounded font-data-label uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            style={{ border: '1px solid rgba(90,65,54,0.5)', color: '#dfe2f1', fontSize: '11px', background: 'transparent' }}
+                            className="w-full py-2 rounded font-data-label uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:text-on-surface"
+                            style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent' }}
                           >
                             {testInFlight.email ? 'Sending…' : 'Send Test Email'}
                           </button>
@@ -395,8 +395,8 @@ const SettingsPage = () => {
                           <button
                             onClick={() => handleSendTest('whatsapp')}
                             disabled={!settings.whatsappAlerts || testInFlight.whatsapp}
-                            className="w-full py-2 rounded font-data-label uppercase tracking-wider mt-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                            style={{ border: '1px solid rgba(90,65,54,0.5)', color: '#94A3B8', fontSize: '11px', background: 'transparent' }}
+                            className="w-full py-2 rounded font-data-label uppercase tracking-wider mt-1 disabled:opacity-40 disabled:cursor-not-allowed hover:text-on-surface"
+                            style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent' }}
                           >
                             {testInFlight.whatsapp ? 'Sending…' : 'Send Test Message'}
                           </button>
@@ -423,9 +423,9 @@ const SettingsPage = () => {
 
           {activeTab !== 'AI Thresholds' && (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#313540' }}>construction</span>
-              <p className="font-headline-sm" style={{ color: '#94A3B8' }}>{activeTab} — Coming Soon</p>
-              <p className="font-data-label" style={{ color: 'rgba(148,163,184,0.6)', fontSize: '11px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-surface-container-highest)' }}>construction</span>
+              <p className="font-headline-sm" style={{ color: 'var(--color-on-surface-variant)' }}>{activeTab} — Coming Soon</p>
+              <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
                 This section will be configured via backend API.
               </p>
             </div>

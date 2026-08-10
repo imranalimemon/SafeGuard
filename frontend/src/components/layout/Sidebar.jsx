@@ -14,14 +14,14 @@ const Sidebar = () => {
     <aside
       className="fixed left-0 top-0 h-screen w-64 flex flex-col z-40"
       style={{
-        background: '#0f131d',
-        borderRight: '1px solid #5a4136',
+        background: 'var(--color-surface)',
+        borderRight: '1px solid var(--color-outline-variant)',
       }}
     >
       {/* Brand / Avatar Header */}
       <div
         className="px-6 py-5 flex items-center gap-3"
-        style={{ borderBottom: '1px solid rgba(90,65,54,0.5)' }}
+        style={{ borderBottom: '1px solid var(--color-outline-variant)' }}
       >
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
@@ -38,7 +38,7 @@ const Sidebar = () => {
           <h2 style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: '15px', color: '#FF6B00', lineHeight: '1.2', letterSpacing: '-0.01em' }}>
             SafeGuard AI
           </h2>
-          <p className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>OPERATOR PANEL</p>
+          <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>OPERATOR PANEL</p>
         </div>
       </div>
 
@@ -56,8 +56,8 @@ const Sidebar = () => {
             }
             style={({ isActive }) =>
               isActive
-                ? { color: '#ffb693', borderLeftColor: '#ffb693', background: 'rgba(255,182,147,0.08)', borderRadius: '4px' }
-                : { color: '#e2bfb0', borderLeftColor: 'transparent' }
+                ? { color: 'var(--color-primary)', borderLeftColor: 'var(--color-primary)', background: 'var(--color-primary-container)', borderRadius: '4px' }
+                : { color: 'var(--color-on-surface-variant)', borderLeftColor: 'transparent' }
             }
           >
             {({ isActive }) => (
@@ -67,7 +67,7 @@ const Sidebar = () => {
                   style={{
                     fontSize: '20px',
                     fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
-                    color: isActive ? '#ffb693' : '#94A3B8',
+                    color: isActive ? 'var(--color-primary)' : 'var(--color-on-surface-variant)',
                     transition: 'color 0.15s',
                   }}
                 >
@@ -81,7 +81,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Footer: Emergency Stop + Status */}
-      <div className="px-4 pb-4" style={{ borderTop: '1px solid rgba(90,65,54,0.5)', paddingTop: '12px' }}>
+      <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--color-outline-variant)', paddingTop: '12px' }}>
         <button
           className="w-full py-2 rounded flex items-center justify-center gap-2 font-data-label transition-opacity hover:opacity-90 active:scale-95"
           style={{ background: '#FF2D55', color: '#fff', fontSize: '11px', letterSpacing: '0.08em', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
@@ -91,10 +91,10 @@ const Sidebar = () => {
         </button>
         <div
           className="mt-3 flex items-center gap-2 px-3 py-2 rounded"
-          style={{ background: '#1c1f2a', border: '1px solid rgba(90,65,54,0.4)' }}
+          style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}
         >
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#10B981' }} />
-          <span className="font-data-label" style={{ color: '#94A3B8', fontSize: '10px' }}>SYSTEM ONLINE</span>
+          <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>SYSTEM ONLINE</span>
         </div>
       </div>
     </aside>
