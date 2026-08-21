@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getViolations, clearViolations } from '../api/client';
+import { getViolations, clearViolations, shareViolationWhatsApp, getAlertSettings } from '../api/client';
 
 const VIOLATION_TYPES = ['All Types', 'Missing Helmet', 'No High-Vis Vest', 'Unauthorized Zone', 'Missing PPE', 'Camera Obscured'];
 const LOCATIONS       = ['Sector 7G', 'Loading Bay A', 'Loading Bay B', 'Main Gate', 'Forge Area'];
@@ -19,6 +19,186 @@ const ViolationBadge = ({ type }) => {
       <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{style.icon}</span>
       {type}
     </span>
+  );
+};
+
+/* ── WhatsApp Share Panel (inside modal) ─────────────────── */
+const WhatsAppSharePanel = ({ violation }) => {
+  const [phoneNumber, setPhoneNumber]       = useState('');
+  const [isSending, setIsSending]           = useState(false);
+  const [sendStatus, setSendStatus]         = useState(null); // {ok, message}
+  const [twilioExpanded, setTwilioExpanded] = useState(false);
+
+  // Pre-load the globally configured WhatsApp number from settings.
+  useEffect(() => {
+    getAlertSettings()
+      .then((res) => {
+        const num = res.data?.whatsapp_recipient || '';
+        if (num) setPhoneNumber(num);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Build the WhatsApp Web quick-share URL with violation details pre-filled.
+  const buildQuickShareUrl = () => {
+    const id      = violation.id ? `EV-${violation.id}` : 'N/A';
+    const missing = violation.missing_ppe || violation.violation_type || 'Unknown';
+    const ts      = violation.timestamp ? new Date(violation.timestamp).toLocaleString() : 'N/A';
+    const cam     = violation.camera_id || violation.camera_name || 'N/A';
+    const conf    = violation.confidence != null ? `${Math.round(violation.confidence * 100)}%` : 'N/A';
+    const text = [
+      `🚨 *SafeGuard AI — PPE Violation Alert*`,
+      ``,
+      `*Violation ID:* ${id}`,
+      `*Missing PPE:* ${missing}`,
+      `*Timestamp:* ${ts}`,
+      `*Camera:* ${cam}`,
+      `*Confidence:* ${conf}`,
+      ``,
+      `Please take immediate corrective action.`,
+    ].join('\n');
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  };
+
+  const handleTwilioSend = async () => {
+    setIsSending(true);
+    setSendStatus(null);
+    try {
+      const payload = phoneNumber.trim() ? { phone_number: phoneNumber.trim() } : {};
+      const res = await shareViolationWhatsApp(violation.id, payload);
+      setSendStatus({ ok: res.data?.ok, message: res.data?.message || 'Done' });
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || 'Network error';
+      setSendStatus({ ok: false, message: msg });
+    } finally {
+      setIsSending(false);
+      setTimeout(() => setSendStatus(null), 6000);
+    }
+  };
+
+  return (
+    <div style={{ borderTop: '1px solid var(--color-outline-variant)', paddingTop: '16px' }}>
+      {/* Section Header */}
+      <div className="flex items-center gap-1.5 mb-3">
+        <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#25D366' }}>chat</span>
+        <div className="font-data-label uppercase" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px', letterSpacing: '0.08em' }}>Share via WhatsApp</div>
+      </div>
+
+      {/* Quick Share button — opens WhatsApp Web with pre-filled message */}
+      <a
+        href={buildQuickShareUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full py-2.5 rounded font-data-value font-bold transition-all hover:opacity-90 active:scale-95"
+        style={{
+          background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+          color: '#fff',
+          fontSize: '12px',
+          textDecoration: 'none',
+          boxShadow: '0 2px 8px rgba(37,211,102,0.35)',
+        }}
+      >
+        {/* WhatsApp SVG icon */}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        Quick Share
+      </a>
+
+      {/* Twilio Dispatch collapsible */}
+      <button
+        onClick={() => setTwilioExpanded((v) => !v)}
+        className="flex items-center justify-between w-full mt-3 py-1.5 transition-colors"
+        style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent', border: 'none' }}
+      >
+        <span className="font-data-label uppercase" style={{ fontSize: '10px', letterSpacing: '0.06em' }}>Send via Twilio</span>
+        <span className="material-symbols-outlined" style={{ fontSize: '14px', transition: 'transform 0.2s', transform: twilioExpanded ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+      </button>
+
+      {twilioExpanded && (
+        <div
+          className="mt-2 p-3 rounded-lg flex flex-col gap-2"
+          style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}
+        >
+          {/* Phone number input */}
+          <div>
+            <label className="block font-data-label mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>
+              RECIPIENT NUMBER
+            </label>
+            <div className="relative">
+              <span
+                className="absolute left-2 top-1/2 -translate-y-1/2 font-data-label"
+                style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px', pointerEvents: 'none' }}
+              >
+                +
+              </span>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="923001234567"
+                className="w-full rounded pl-5 pr-2 py-1.5 font-data-value outline-none"
+                style={{
+                  background: 'var(--color-surface-container-lowest)',
+                  border: '1px solid var(--color-outline)',
+                  color: 'var(--color-on-surface)',
+                  fontSize: '12px',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = '#25D366')}
+                onBlur={(e) => (e.target.style.borderColor = 'var(--color-outline)')}
+              />
+            </div>
+            <p className="font-data-label mt-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px', opacity: 0.7 }}>
+              Defaults to configured number if blank.
+            </p>
+          </div>
+
+          {/* Send button */}
+          <button
+            onClick={handleTwilioSend}
+            disabled={isSending}
+            className="w-full py-2 rounded font-data-value font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 active:scale-95"
+            style={{ background: '#128C7E', color: '#fff', fontSize: '12px' }}
+          >
+            {isSending ? (
+              <>
+                <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                  <path d="M12 2a10 10 0 0 1 10 10" />
+                </svg>
+                Sending…
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>send</span>
+                Send Violation Report
+              </>
+            )}
+          </button>
+
+          {/* Status feedback */}
+          {sendStatus && (
+            <div
+              className="flex items-start gap-2 p-2 rounded text-left animate-fade-in"
+              style={{
+                background: sendStatus.ok ? 'rgba(37,211,102,0.1)' : 'rgba(255,45,85,0.1)',
+                border: `1px solid ${sendStatus.ok ? 'rgba(37,211,102,0.35)' : 'rgba(255,45,85,0.35)'}`,
+              }}
+            >
+              <span
+                className="material-symbols-outlined flex-shrink-0 mt-0.5"
+                style={{ fontSize: '14px', color: sendStatus.ok ? '#25D366' : '#FF2D55' }}
+              >
+                {sendStatus.ok ? 'check_circle' : 'error'}
+              </span>
+              <p className="font-data-label" style={{ fontSize: '10px', color: sendStatus.ok ? '#25D366' : '#FF2D55', lineHeight: 1.4 }}>
+                {sendStatus.message}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -114,6 +294,9 @@ const ViolationModal = ({ violation, onClose }) => {
                 </button>
               </div>
             </div>
+
+            {/* ── WhatsApp Share Panel ── */}
+            <WhatsAppSharePanel violation={violation} />
           </div>
         </div>
       </div>
