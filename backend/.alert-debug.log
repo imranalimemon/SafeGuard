@@ -161,3 +161,18 @@ Payload:
   to: whatsapp:+15555550100
   violation_id: None
   missing_ppe: Helmet, Safety Vest
+=== 2026-08-21T10:52:51.777010 | channel=whatsapp ===
+Subject: SafeGuard AI — PPE VIOLATION DETECTED
+
+SafeGuard AI — PPE VIOLATION DETECTED
+Timestamp: 2026-08-21 10:38:35.777180
+Missing PPE: Helmet, Safety Vest, Face Mask
+Worker Count: 1
+Details: Live camera: laptop (unknown location)
+
+
+Payload:
+  from: whatsapp:+14155238886
+  to: whatsapp:923106387577
+  violation_id: 16
+  missing_ppe: Helmet, Safety Vest, Face Mask

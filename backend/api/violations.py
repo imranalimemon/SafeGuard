@@ -1,6 +1,7 @@
 import json
 from datetime import date as _date, datetime
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional, Union
 
@@ -160,3 +161,63 @@ def clear_violations(db: Session = Depends(get_db)):
     db.query(Violation).delete()
     db.commit()
     return {"status": "ok", "message": "All violations deleted"}
+
+
+# ── Manual WhatsApp Share ─────────────────────────────────────────────────────
+
+class WhatsAppShareRequest(BaseModel):
+    """Body for the manual WhatsApp share endpoint.
+
+    `phone_number` is optional — when omitted the backend falls back to the
+    globally configured `ALERT_WHATSAPP_TO`. Including it lets the admin send
+    the violation to any number without changing global settings.
+    """
+    phone_number: Optional[str] = None
+
+
+@router.post("/api/violations/{violation_id}/share/whatsapp")
+async def share_violation_whatsapp(
+    violation_id: int,
+    body: WhatsAppShareRequest = WhatsAppShareRequest(),
+    db: Session = Depends(get_db),
+):
+    """Manually send a specific violation's details to WhatsApp.
+
+    This endpoint bypasses the global `ENABLE_WHATSAPP_ALERTS` toggle so
+    the admin can always dispatch a manual share regardless of whether
+    automatic live-detection alerts are enabled. The configured Twilio
+    credentials must be set (or `ALERT_DEBUG_MODE=true` for local testing).
+
+    Returns `{ok, message, transport}` matching the shape of the test alert
+    response so the frontend can surface the same feedback UI.
+    """
+    from config import settings as app_settings
+    from alerts.whatsapp_service import send_whatsapp_alert
+
+    v = db.query(Violation).filter(Violation.id == violation_id).first()
+    if not v:
+        raise HTTPException(status_code=404, detail="Violation not found")
+
+    violation_data = _serialize_violation(v)
+
+    try:
+        ok = await send_whatsapp_alert(
+            violation_data,
+            to_number=body.phone_number or None,
+            bypass_enabled_check=True,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "message": f"Failed: {exc}",
+            "transport": "none",
+        }
+
+    transport = "debug" if app_settings.ALERT_DEBUG_MODE else "twilio"
+    if ok:
+        destination = body.phone_number or app_settings.ALERT_WHATSAPP_TO or "configured number"
+        message = f"Violation EV-{violation_id} sent to {destination}."
+    else:
+        message = "Send failed — check server logs. Ensure Twilio credentials are set or enable ALERT_DEBUG_MODE."
+
+    return {"ok": ok, "message": message, "transport": transport}
