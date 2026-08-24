@@ -31,12 +31,28 @@ def _build_message_body(violation_data: dict) -> str:
     return body
 
 
-async def send_whatsapp_alert(violation_data: dict) -> bool:
+async def send_whatsapp_alert(
+    violation_data: dict,
+    to_number: str = None,
+    bypass_enabled_check: bool = False,
+) -> bool:
     """Send a WhatsApp alert. Returns True on success, False on any
     failure. Logs every failure with a full traceback so operators can
-    diagnose without re-running the violation."""
-    if not settings.ENABLE_WHATSAPP_ALERTS:
+    diagnose without re-running the violation.
+
+    Args:
+        violation_data:        The violation payload dict.
+        to_number:             Override the global ALERT_WHATSAPP_TO recipient.
+                               Useful for manual admin shares to a custom number.
+        bypass_enabled_check:  When True, skip the ENABLE_WHATSAPP_ALERTS gate
+                               so manual shares still work even if automatic
+                               WhatsApp alerts are globally disabled.
+    """
+    if not bypass_enabled_check and not settings.ENABLE_WHATSAPP_ALERTS:
         return False
+
+    # Resolve the destination number — caller-supplied takes precedence.
+    destination = to_number or settings.ALERT_WHATSAPP_TO
 
     try:
         body = _build_message_body(violation_data)
@@ -47,19 +63,19 @@ async def send_whatsapp_alert(violation_data: dict) -> bool:
                 channel="whatsapp",
                 payload={
                     "from": f"whatsapp:{settings.TWILIO_WHATSAPP_FROM}",
-                    "to": f"whatsapp:{settings.ALERT_WHATSAPP_TO}",
+                    "to": f"whatsapp:{destination}",
                     "violation_id": violation_data.get("id"),
                     "missing_ppe": violation_data.get("missing_ppe"),
                 },
                 subject="SafeGuard AI — PPE VIOLATION DETECTED",
                 body=body,
             )
-            logger.info(f"[whatsapp] debug-mode: logged alert for violation {violation_data.get('id')}")
+            logger.info(f"[whatsapp] debug-mode: logged alert for violation {violation_data.get('id')} -> {destination}")
             return True
 
-        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.ALERT_WHATSAPP_TO):
+        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and destination):
             logger.warning(
-                "[whatsapp] TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / ALERT_WHATSAPP_TO "
+                "[whatsapp] TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / destination number "
                 "not all set — skipping send"
             )
             return False
@@ -77,9 +93,9 @@ async def send_whatsapp_alert(violation_data: dict) -> bool:
         client.messages.create(
             from_=f"whatsapp:{settings.TWILIO_WHATSAPP_FROM}",
             body=body,
-            to=f"whatsapp:{settings.ALERT_WHATSAPP_TO}",
+            to=f"whatsapp:{destination}",
         )
-        logger.info(f"[whatsapp] sent alert for violation {violation_data.get('id')}")
+        logger.info(f"[whatsapp] sent alert for violation {violation_data.get('id')} -> {destination}")
         return True
     except Exception:
         logger.exception("[whatsapp] failed to send alert")
