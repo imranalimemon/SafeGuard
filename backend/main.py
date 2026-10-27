@@ -12,7 +12,7 @@ logger = logging.getLogger("uvicorn.error")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import settings
-from db.database import engine, Base, ensure_violation_columns, ensure_alert_settings_columns, SessionLocal
+from db.database import engine, Base, ensure_violation_columns, ensure_alert_settings_columns, ensure_alert_log_columns, SessionLocal
 from db.models import AlertSettings
 from runtime_settings import restore_settings
 from starlette.concurrency import run_in_threadpool
@@ -28,6 +28,7 @@ Base.metadata.create_all(bind=engine)
 # (no Alembic at this milestone — see db/database.py for details).
 ensure_violation_columns(engine)
 ensure_alert_settings_columns(engine)
+ensure_alert_log_columns(engine)
 
 app = FastAPI(
     title="SafeGuard AI API",
@@ -69,14 +70,11 @@ async def startup_event():
     print(f"  Database:        {settings.DATABASE_URL}")
     print(f"  Email alerts:    {'ON' if settings.ENABLE_EMAIL_ALERTS else 'OFF'}")
     print(f"  WhatsApp alerts: {'ON' if settings.ENABLE_WHATSAPP_ALERTS else 'OFF'}")
+    print(f"  Alert delivery:  {settings.ALERT_DELIVERY_MODE} (DB toggles cannot change this)")
     print(f"  Screenshots:     {settings.SCREENSHOT_DIR}")
     if settings.ALERT_DEBUG_MODE:
         print(f"  Alert debug:     ON  -> {settings.DEBUG_SMTP_HOST}:{settings.DEBUG_SMTP_PORT}, log={settings.DEBUG_LOG_FILE}")
-        # Start the local aiosmtpd receiver so email_service.py can deliver
-        # to it. Failure to bind is logged but does not abort startup —
-        # email_service.py will fall back to file-only logging.
-        from alerts.debug_receiver import start as start_debug
-        start_debug()
+        print('  Debug alerts use preview only; no SMTP/Twilio connection is opened.')
     else:
         print(f"  Alert debug:     OFF")
     print("=" * 50)
@@ -84,9 +82,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    if settings.ALERT_DEBUG_MODE:
-        from alerts.debug_receiver import stop as stop_debug
-        stop_debug()
+    pass
 
 @app.get("/")
 async def root():

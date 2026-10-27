@@ -49,8 +49,6 @@ async def test_email_alert():
     except Exception as e:
         logger.exception("[api.settings] test email failed")
         return {"ok": False, "message": f"Failed: {e}", "transport": "none"}
-    if result["transport"] == "debug":
-        result["message"] = "Sent via local debug receiver — check the alert debug log."
     return result
 
 
@@ -70,6 +68,11 @@ async def test_whatsapp_alert():
     except Exception as e:
         logger.exception("[api.settings] test whatsapp failed")
         return {"ok": False, "message": f"Failed: {e}", "transport": "none"}
-    if result["transport"] == "debug":
-        result["message"] = "Sent via local debug receiver — check the alert debug log."
     return result
+
+
+@router.get('/api/settings/alerts/preview-email')
+def preview_test_email():
+    from alerts.email_service import preview_email
+    from alerts.alert_manager import _synthetic_violation
+    return preview_email(_synthetic_violation())

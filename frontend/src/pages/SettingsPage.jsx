@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { getAlertSettings, updateAlertSettings, sendTestEmail, sendTestWhatsApp } from '../api/client';
+import React, { useState, useEffect, useRef } from 'react';
+import { getAlertSettings, updateAlertSettings, sendTestEmail, sendTestWhatsApp, previewTestEmail } from '../api/client';
+import EmailPreviewButton from '../components/EmailPreview';
 import { useSystemHealth } from '../context/SystemHealth';
 
 const TABS = ['AI Thresholds'];
@@ -90,6 +91,7 @@ const SettingsPage = () => {
   // user clicks again or navigates away.
   const [testStatus, setTestStatus]   = useState({ email: null, whatsapp: null });
   const [testInFlight, setTestInFlight] = useState({ email: false, whatsapp: false });
+  const sendingRef = useRef({ email: false, whatsapp: false });
   const [settings, setSettings]       = useState({
     emailAlerts:          null,
     emailAddress:         '',
@@ -166,6 +168,8 @@ const SettingsPage = () => {
   // — we surface the message so the operator knows whether the send went
   // out via SMTP / Twilio / the local debug receiver.
   const handleSendTest = async (channel) => {
+    if (sendingRef.current[channel]) return;
+    sendingRef.current[channel] = true;
     setTestInFlight((p) => ({ ...p, [channel]: true }));
     setTestStatus((p) => ({ ...p, [channel]: null }));
     const send = channel === 'email' ? sendTestEmail : sendTestWhatsApp;
@@ -183,9 +187,8 @@ const SettingsPage = () => {
       const text = err?.response?.data?.message || err?.message || 'Network error';
       setTestStatus((p) => ({ ...p, [channel]: { kind: 'error', text } }));
     } finally {
+      sendingRef.current[channel] = false;
       setTestInFlight((p) => ({ ...p, [channel]: false }));
-      // Auto-clear after 6s so the message doesn't linger forever.
-      setTimeout(() => setTestStatus((p) => ({ ...p, [channel]: null })), 6000);
     }
   };
 
@@ -348,12 +351,16 @@ const SettingsPage = () => {
                         <div className="flex flex-col gap-1 mt-1">
                           <button
                             onClick={() => handleSendTest('email')}
-                            disabled={testInFlight.email}
+                            disabled={testInFlight.email || !settings.emailAlerts || health.alert_delivery_mode !== 'live'}
                             className="w-full py-2 rounded font-data-label uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:text-on-surface"
                             style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent' }}
                           >
-                            {testInFlight.email ? 'Sending…' : 'Send Test Email'}
+                            {testInFlight.email ? 'Sending…' : 'Send test email'}
                           </button>
+                          <p>Uses the saved recipient. Save settings before sending. One click makes one attempt.</p>
+                          <p>Delivery mode: {health.alert_delivery_mode || 'not available'}. Preview mode cannot send, even when saved alerts are enabled.</p>
+                          {health.email_enabled && <p>SMTP configured: {health.smtp_configured ? 'Yes (not connection-tested)' : `No: ${health.smtp_configuration_error || 'not available'}`}</p>}
+                          <EmailPreviewButton load={previewTestEmail} />
                           {testStatus.email && (
                             <p
                               className="font-data-label"
@@ -407,7 +414,7 @@ const SettingsPage = () => {
                         <div className="flex flex-col gap-1 mt-1">
                           <button
                             onClick={() => handleSendTest('whatsapp')}
-                            disabled={!settings.whatsappAlerts || testInFlight.whatsapp}
+                            disabled={!settings.whatsappAlerts || testInFlight.whatsapp || health.alert_delivery_mode !== 'live'}
                             className="w-full py-2 rounded font-data-label uppercase tracking-wider mt-1 disabled:opacity-40 disabled:cursor-not-allowed hover:text-on-surface"
                             style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', fontSize: '11px', background: 'transparent' }}
                           >

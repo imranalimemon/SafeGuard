@@ -136,10 +136,11 @@ def _record(db, tasks, source, filename, frame_number, frame, detections, worker
     db.commit()  # Short transaction per analyzed frame; never hold a video-long DB lock.
     retained.add(Path(disk))
     created = []
-    for row in rows:
+    for row, worker in zip(rows, accepted):
         db.refresh(row)
         payload = {key: getattr(row, key) for key in ('id', 'violation_type', 'missing_ppe', 'person_count', 'confidence', 'details', 'source')}
         payload.update(timestamp=str(row.timestamp), screenshot_path=url, frame_number=frame_number)
+        payload['person_bbox'] = worker['person_bbox']
         created.append(payload)
         tasks.add_task(_notify, payload, disk)
     return created, suppressed

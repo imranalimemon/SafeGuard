@@ -19,6 +19,7 @@ const result = esbuild.buildSync({
       export { CameraCard } from './src/pages/CamerasPage';
       export { ReviewState, ReviewActions } from './src/components/ViolationReview';
       export { default as UploadResult } from './src/components/UploadResult';
+      export { EmailPreview } from './src/components/EmailPreview';
       export { default as Upload } from './src/pages/UploadPage';
       export { default as Settings } from './src/pages/SettingsPage';
     `,
@@ -122,3 +123,11 @@ assert.match(html, /download="safeguard-frame-3.jpg"/);
 assert.match(html, /Detected violations by analyzed frame/);
 assert.match(html, /Violations created: 1/);
 console.log('PASS: video upload renders the real summary, key frames, downloads and violation list.');
+
+html = renderToStaticMarkup(React.createElement(components.EmailPreview, { preview: {
+  to: 'configured@example.invalid', subject: 'Camera 7 | 2026-10-28 +05:00 | Missing Helmet',
+  body: 'Source: camera:7\nMissing PPE: Helmet', attachments: [{ filename: 'annotated.jpg', bytes: 123 }], eml_base64: 'ZmFrZS1lbWFpbA==',
+} }));
+assert.match(html, /Nothing was sent/); assert.match(html, /configured@example.invalid/);
+assert.match(html, /annotated.jpg/); assert.match(html, /download="safeguard-email-preview.eml"/);
+console.log('PASS: email preview shows recipient, exact content, attachment and downloadable MIME without sending.');

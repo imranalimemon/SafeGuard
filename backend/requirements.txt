@@ -12,3 +12,4 @@ aiofiles>=23.0.0
 # Alert delivery
 twilio>=8.0.0
 aiosmtpd>=1.4.4
+tzdata>=2024.1

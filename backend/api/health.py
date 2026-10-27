@@ -26,6 +26,10 @@ def health():
         pass
 
     model_loaded = bool(providers)
+    smtp = {'configured': None, 'error': None}
+    if settings.ENABLE_EMAIL_ALERTS:
+        from alerts.email_service import smtp_configuration
+        smtp = smtp_configuration()  # Configuration only: no connection/login/send.
     return {
         "status": "ok" if model_loaded and db_connected else "degraded",
         "model_loaded": model_loaded,
@@ -33,5 +37,9 @@ def health():
         "model_name": model_name,
         "execution_providers": providers,
         "email_enabled": settings.ENABLE_EMAIL_ALERTS,
-        "whatsapp_enabled": settings.ENABLE_WHATSAPP_ALERTS
+        "whatsapp_enabled": settings.ENABLE_WHATSAPP_ALERTS,
+        "alert_delivery_mode": 'preview' if settings.ALERT_DEBUG_MODE else settings.ALERT_DELIVERY_MODE,
+        "smtp_configured": smtp['configured'],
+        "smtp_configuration_error": smtp['error'],
+        "smtp_status_note": 'Configuration check only; network reachability and authentication are not tested.',
     }

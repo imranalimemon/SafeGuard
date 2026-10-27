@@ -52,6 +52,8 @@ class AlertLog(Base):
     sent_to = Column(String)
     sent_at = Column(DateTime)
     status = Column(String) # 'success' or 'failed'
+    message = Column(String, nullable=True)
+    transport = Column(String, nullable=True)
 
 
 class Camera(Base):

@@ -33,11 +33,13 @@ export const updateAlertSettings = (data) => client.put('/settings/alerts', data
 // UI surfaces that so the operator knows whether they're seeing real
 // delivery or local receiver output.
 export const sendTestEmail = () => client.post('/settings/alerts/test-email');
+export const previewTestEmail = () => client.get('/settings/alerts/preview-email');
+export const previewViolationEmail = id => client.get(`/violations/${id}/preview/email`);
 export const sendTestWhatsApp = () => client.post('/settings/alerts/test-whatsapp');
 export const clearViolations = () => client.delete('/violations');
 // Manually share a specific violation via WhatsApp (Twilio). `data` is optional
 // and may include `{ phone_number }` to override the globally configured number.
-// The endpoint bypasses ENABLE_WHATSAPP_ALERTS so this always attempts the send.
+// It bypasses the channel toggle; process-level preview mode still blocks delivery.
 export const shareViolationWhatsApp = (id, data = {}) =>
   client.post(`/violations/${id}/share/whatsapp`, data);
 

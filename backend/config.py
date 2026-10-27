@@ -63,6 +63,14 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./safeguard.db")
 
     # ── Email Alerts ──
+    # Process-only safety switch: DB alert toggles cannot enable live delivery.
+    ALERT_DELIVERY_MODE: str = os.getenv("ALERT_DELIVERY_MODE", "preview").lower()
+    if ALERT_DELIVERY_MODE not in {"preview", "live"}:
+        raise ValueError("ALERT_DELIVERY_MODE must be preview or live")
+    ALERT_TIMEZONE: str = os.getenv("ALERT_TIMEZONE", "Asia/Karachi")
+    ALERT_NETWORK_TIMEOUT_SECONDS: float = float(os.getenv("ALERT_NETWORK_TIMEOUT_SECONDS", "10"))
+    if not 0 < ALERT_NETWORK_TIMEOUT_SECONDS <= 60:
+        raise ValueError("ALERT_NETWORK_TIMEOUT_SECONDS must be greater than 0 and at most 60")
     ENABLE_EMAIL_ALERTS: bool = os.getenv("ENABLE_EMAIL_ALERTS", "false").lower() == "true"
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))

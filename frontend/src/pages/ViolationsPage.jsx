@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { getViolations, shareViolationWhatsApp, getAlertSettings, reviewViolation } from '../api/client';
+import { getViolations, shareViolationWhatsApp, getAlertSettings, reviewViolation, previewViolationEmail } from '../api/client';
+import EmailPreviewButton from '../components/EmailPreview';
 
 import { ReviewActions, ReviewState } from '../components/ViolationReview';
 import { collectViolations, downloadCSV, buildPDF } from '../api/violationReports';
@@ -273,6 +274,7 @@ const ViolationModal = ({ violation, onClose, onAction, busy }) => {
               )}
             </div>
             <ReviewState violation={violation} />
+            <EmailPreviewButton load={() => previewViolationEmail(violation.id)} />
             <ReviewActions violation={violation} onAction={onAction} busy={busy} />
             {violation.screenshot_path && <a href={violation.screenshot_path} target="_blank" rel="noreferrer">Open full-size evidence</a>}
 

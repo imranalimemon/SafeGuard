@@ -1,7 +1,7 @@
 """Run real-model sanity checks directly, without API, DB, or alert imports.
 
 Run from the project root with: python -B backend/tools/sanity_check.py
-Only annotated comparison images are written, always outside the repository.
+Annotated comparisons and a JSON report are written only outside the repository.
 """
 import argparse
 from collections import Counter
@@ -33,6 +33,8 @@ def main():
     parser.add_argument("--confidence", type=float, help="Process-only threshold override; never saves config")
     parser.add_argument("--required-ppe", nargs="+", choices=["Helmet", "Safety Vest", "Face Mask"],
                         help="Process-only required-PPE override")
+    parser.add_argument("--compare-required-ppe", nargs="+", choices=["Helmet", "Safety Vest", "Face Mask"],
+                        help="Recompute an earlier PPE policy on identical detections; never reads a database")
     args = parser.parse_args()
     if args.confidence is not None and not 0 < args.confidence <= 1:
         parser.error("--confidence must be greater than 0 and at most 1")
@@ -56,7 +58,8 @@ def main():
     if len(set(image_paths)) != 12 or not all(p.is_file() for p in image_paths):
         parser.error("Exactly 12 distinct, existing input images are required")
     output_paths = [output_dir / f"{i:02d}_{path.name}" for i, path in enumerate(image_paths, 1)]
-    if any(path.exists() for path in output_paths):
+    report_path = output_dir / 'sanity_results.json'
+    if report_path.exists() or any(path.exists() for path in output_paths):
         parser.error("Refusing to overwrite existing output images; choose a fresh output directory")
 
     # Prevent config's import-time directory creation from targeting the repo.
@@ -66,6 +69,8 @@ def main():
     os.environ["ENABLE_EMAIL_ALERTS"] = "false"
     os.environ["ENABLE_WHATSAPP_ALERTS"] = "false"
     os.environ["ALERT_DEBUG_MODE"] = "false"
+    os.environ["ALERT_DELIVERY_MODE"] = "preview"
+    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     sys.path.insert(0, str(BACKEND))
 
     import cv2
@@ -84,13 +89,14 @@ def main():
     started = time.perf_counter()
     detector = PPEDetector(model_path=str(model_path))
     load_ms = (time.perf_counter() - started) * 1000
-    print("CONFIG", json.dumps({
+    config_report = {
         "model": str(model_path), "sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
         "providers": detector.session.get_providers(), "confidence": settings.CONFIDENCE_THRESHOLD,
         "nms_iou": settings.IOU_THRESHOLD, "required_ppe": settings.REQUIRED_PPE,
         "model_load_ms": round(load_ms, 2),
         "timing": "Detection includes preprocessing, ONNX inference, and NMS; excludes loading, rules, annotation, and saving",
-    }), flush=True)
+    }
+    print("CONFIG", json.dumps(config_report), flush=True)
 
     # Warm up on a blank synthetic frame, not an extra dataset image.
     detector.detect(np.zeros((640, 640, 3), dtype=np.uint8))
@@ -98,6 +104,10 @@ def main():
     failures = []
     total_detections = Counter()
     total_violations = 0
+    results = []
+    baseline_violations = 0
+    mask_not_assessable = 0
+    missing_masks = 0
     for image_number, (image_path, output_path) in enumerate(zip(image_paths, output_paths), 1):
         try:
             image = cv2.imread(str(image_path))
@@ -107,6 +117,7 @@ def main():
             detections = detector.detect(image)
             detection_ms = (time.perf_counter() - started) * 1000
             workers = compute_violations(detections, frame=image)
+            baseline = compute_violations(detections, required_ppe=args.compare_required_ppe, frame=image) if args.compare_required_ppe else None
             annotated = annotate_frame(image, detections, workers)
             worker_results = []
             for index, worker in enumerate(workers, 1):
@@ -144,6 +155,25 @@ def main():
                 "final_violations": [w for w in worker_results if w["status"] == "VIOLATION"],
                 "detections": detections, "output_image": str(output_path),
             }
+            if baseline is not None:
+                result['comparison'] = {
+                    'required_ppe': args.compare_required_ppe,
+                    'violations': sum(w['status'] == 'VIOLATION' for w in baseline),
+                    'helmet_vest_decisions_match': all(
+                        set(before['missing_ppe']) & {'Helmet', 'Safety Vest'} == set(after['missing_ppe']) & {'Helmet', 'Safety Vest'}
+                        for before, after in zip(baseline, workers)),
+                    'changed_workers': [
+                        {'worker': i, 'before_status': before['status'], 'after_status': after['status'],
+                         'before_missing': before['missing_ppe'], 'after_missing': after['missing_ppe'],
+                         'mask_assessment': after['mask_assessment']}
+                        for i, (before, after) in enumerate(zip(baseline, workers), 1)
+                        if before['status'] != after['status'] or before['missing_ppe'] != after['missing_ppe']
+                    ],
+                }
+                baseline_violations += result['comparison']['violations']
+            mask_not_assessable += sum(w['mask_assessment'] == 'not assessable' for w in workers)
+            missing_masks += sum('Face Mask' in w['missing_ppe'] for w in workers)
+            results.append(result)
             times.append(detection_ms)
             total_detections.update(counts)
             total_violations += len(result["final_violations"])
@@ -164,7 +194,13 @@ def main():
         "confidence": settings.CONFIDENCE_THRESHOLD, "required_ppe": settings.REQUIRED_PPE,
         "total_detections_per_class": {name: total_detections[name] for name in settings.CLASS_NAMES.values()},
         "total_violations": total_violations,
+        "mask_not_assessable_workers": mask_not_assessable,
+        "missing_mask_workers": missing_masks,
+        "comparison_required_ppe": args.compare_required_ppe,
+        "comparison_total_violations": baseline_violations if args.compare_required_ppe else None,
     }
+    with report_path.open('x', encoding='utf-8') as output:
+        json.dump({'config': config_report, 'results': results, 'summary': summary}, output, indent=2)
     print("SUMMARY_JSON " + json.dumps(summary), flush=True)
     return 1 if failures or forbidden else 0
 

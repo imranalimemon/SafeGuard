@@ -135,6 +135,8 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
                 "timestamp": str(row.timestamp),
                 "details": row.details,
                 "source": row.source,
+                "camera_name": camera.name,
+                "person_bbox": v['person_bbox'],
             })
     finally:
         db.close()
