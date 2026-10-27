@@ -32,9 +32,14 @@ def get_alert_settings(db: Session = Depends(get_db)):
             "whatsapp_recipient": settings.ALERT_WHATSAPP_TO,
             "email_cooldown": settings.EMAIL_COOLDOWN_SECONDS,
             "whatsapp_cooldown": settings.WHATSAPP_COOLDOWN_SECONDS,
-            "confidence_threshold": settings.CONFIDENCE_THRESHOLD
+            "confidence_threshold": settings.CONFIDENCE_THRESHOLD,
+            "required_ppe": list(settings.REQUIRED_PPE),
         }
-    return db_settings
+    # PPE policy comes from config, independently of existing alert-setting rows.
+    return {
+        **{column.name: getattr(db_settings, column.name) for column in AlertSettings.__table__.columns},
+        "required_ppe": list(settings.REQUIRED_PPE),
+    }
 
 @router.put("/api/settings/alerts")
 def update_alert_settings(update_data: AlertSettingsUpdate, db: Session = Depends(get_db)):

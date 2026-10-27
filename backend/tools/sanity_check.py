@@ -30,7 +30,12 @@ def main():
     parser.add_argument("--input-dir", type=Path, default=Path(r"I:\AntiGRavity\My_FYP_Dataset\test\images"))
     parser.add_argument("--output-dir", type=Path, default=Path(r"I:\AntiGRavity\sanity_output"))
     parser.add_argument("--images", nargs=12, help="Optional exact filenames of 12 test images")
+    parser.add_argument("--confidence", type=float, help="Process-only threshold override; never saves config")
+    parser.add_argument("--required-ppe", nargs="+", choices=["Helmet", "Safety Vest", "Face Mask"],
+                        help="Process-only required-PPE override")
     args = parser.parse_args()
+    if args.confidence is not None and not 0 < args.confidence <= 1:
+        parser.error("--confidence must be greater than 0 and at most 1")
     input_dir = args.input_dir.resolve()
     output_dir = args.output_dir.resolve()
     if output_dir == REPOSITORY or REPOSITORY in output_dir.parents:
@@ -70,6 +75,11 @@ def main():
     from detection.model import PPEDetector
     from detection.violation_logic import compute_violations
 
+    if args.confidence is not None:
+        settings.CONFIDENCE_THRESHOLD = args.confidence
+    if args.required_ppe is not None:
+        settings.REQUIRED_PPE = args.required_ppe
+
     model_path = BACKEND / "best.onnx"
     started = time.perf_counter()
     detector = PPEDetector(model_path=str(model_path))
@@ -86,6 +96,8 @@ def main():
     detector.detect(np.zeros((640, 640, 3), dtype=np.uint8))
     times = []
     failures = []
+    total_detections = Counter()
+    total_violations = 0
     for image_number, (image_path, output_path) in enumerate(zip(image_paths, output_paths), 1):
         try:
             image = cv2.imread(str(image_path))
@@ -133,6 +145,8 @@ def main():
                 "detections": detections, "output_image": str(output_path),
             }
             times.append(detection_ms)
+            total_detections.update(counts)
+            total_violations += len(result["final_violations"])
             print("RESULT_JSON " + json.dumps(result), flush=True)
         except Exception as exc:
             failures.append({"filename": image_path.name, "error": f"{type(exc).__name__}: {exc}"})
@@ -147,6 +161,9 @@ def main():
         "min_detection_ms": round(min(times), 2) if times else None,
         "max_detection_ms": round(max(times), 2) if times else None,
         "forbidden_modules_imported": forbidden, "output_dir": str(output_dir),
+        "confidence": settings.CONFIDENCE_THRESHOLD, "required_ppe": settings.REQUIRED_PPE,
+        "total_detections_per_class": {name: total_detections[name] for name in settings.CLASS_NAMES.values()},
+        "total_violations": total_violations,
     }
     print("SUMMARY_JSON " + json.dumps(summary), flush=True)
     return 1 if failures or forbidden else 0

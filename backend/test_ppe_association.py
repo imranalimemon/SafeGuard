@@ -127,6 +127,29 @@ class PPEAssociationTests(unittest.TestCase):
         ], ["Helmet", "Safety Vest", "Face Mask"])[0]
         self.assertEqual(result["missing_ppe"], ["Face Mask"])
 
+    def test_close_up_mask_from_fac_test_00005_is_associated(self):
+        # Actual detector boxes from fac_test_00005, reproduced without the image/model.
+        result = logic.compute_violations([
+            detection(2, [18, 191, 336, 640]),
+            detection(0, [83, 277, 256, 483]),
+        ], ["Face Mask"])[0]
+        self.assertEqual(result["has_ppe"], ["Face Mask"])
+        self.assertEqual(result["status"], "COMPLIANT")
+
+    def test_mask_at_feet_is_not_associated(self):
+        self.assert_missing(detection(0, [125, 350, 175, 380]), "Face Mask")
+
+    def test_default_helmet_and_vest_do_not_require_mask(self):
+        result = logic.compute_violations([
+            self.person, detection(1, [125, 95, 175, 135]),
+            detection(3, [110, 170, 190, 280]),
+        ])[0]
+        self.assertEqual(result["status"], "COMPLIANT")
+
+    def test_empty_requirements_fall_back_to_helmet_and_vest(self):
+        result = logic.compute_violations([self.person], [])[0]
+        self.assertEqual(result["missing_ppe"], ["Helmet", "Safety Vest"])
+
     def test_overlapping_workers_each_keep_their_own_helmet(self):
         results = logic.compute_violations([
             detection(2, [100, 100, 220, 400]),

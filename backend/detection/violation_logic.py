@@ -84,12 +84,13 @@ def get_anatomical_zone(person_box: List[int], ppe_type: str) -> List[int]:
             int(py1 + 0.35 * ph),
         ]
     elif ppe_type == "Face Mask":
-        # Face zone: from top 5% to top 40% of body
+        # A close-up person may contain only head/torso. Allow the upper half
+        # while keeping masks horizontally within the central head/body area.
         return [
-            int(px1 - 0.10 * pw),
-            int(py1 + 0.05 * ph),
-            int(px2 + 0.10 * pw),
-            int(py1 + 0.40 * ph),
+            int(px1 + 0.05 * pw),
+            py1,
+            int(px2 - 0.05 * pw),
+            int(py1 + 0.50 * ph),
         ]
     elif ppe_type == "Safety Vest":
         # Torso zone: from top 15% to 70% of body, excluding the lower legs.
@@ -159,7 +160,7 @@ def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]]
             canonical_required.append(c)
 
     if not canonical_required:
-        canonical_required = ["Helmet", "Safety Vest", "Face Mask"]
+        canonical_required = ["Helmet", "Safety Vest"]
 
     # Separate Person and PPE detections
     persons = [d for d in detections if d.get("class_id") == settings.PERSON_CLASS_ID]

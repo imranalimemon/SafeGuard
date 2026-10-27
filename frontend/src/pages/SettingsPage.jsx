@@ -3,10 +3,10 @@ import { getAlertSettings, updateAlertSettings, sendTestEmail, sendTestWhatsApp 
 
 const TABS = ['AI Thresholds', 'Alert Routing', 'User RBAC', 'System Logs'];
 
-const REQUIRED_PPE = [
-  { name: 'Safety Helmet',       icon: 'construction' },
-  { name: 'High-Visibility Vest', icon: 'dry_cleaning' },
-  { name: 'Face Mask',           icon: 'masks' },
+const PPE_ITEMS = [
+  { name: 'Safety Helmet',       key: 'Helmet',      icon: 'construction' },
+  { name: 'High-Visibility Vest', key: 'Safety Vest', icon: 'dry_cleaning' },
+  { name: 'Face Mask',            key: 'Face Mask',   icon: 'masks' },
 ];
 
 /* ── Section heading ─────────────────────────────────────── */
@@ -80,6 +80,7 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab]     = useState('AI Thresholds');
   const [isSaving, setIsSaving]       = useState(false);
   const [saveStatus, setSaveStatus]   = useState(null); // 'success' | 'error'
+  const [requiredPpe, setRequiredPpe] = useState(['Helmet', 'Safety Vest']);
   // Transient per-channel test status: { kind: 'success'|'error', text: string }
   // — the test buttons overwrite this after each press; cleared when the
   // user clicks again or navigates away.
@@ -101,6 +102,7 @@ const SettingsPage = () => {
       try {
         const res  = await getAlertSettings();
         const data = res.data;
+        if (Array.isArray(data.required_ppe)) setRequiredPpe(data.required_ppe);
         setSettings((prev) => ({
           ...prev,
           emailAlerts:        data.email_enabled         ?? prev.emailAlerts,
@@ -281,14 +283,14 @@ const SettingsPage = () => {
 
                       <hr style={{ borderColor: 'var(--color-outline-variant)' }} />
 
-                      {/* Always Required PPE */}
+                      {/* PPE requirements reflect backend site configuration. */}
                       <div>
-                        <h4 className="font-data-label uppercase tracking-wider mb-1" style={{ color: '#FF6B00', fontSize: '11px' }}>Always Required PPE</h4>
+                        <h4 className="font-data-label uppercase tracking-wider mb-1" style={{ color: '#FF6B00', fontSize: '11px' }}>PPE Requirements</h4>
                         <p className="font-data-label mb-4" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
-                          These items are always required and cannot be disabled in standard operating modes.
+                          Helmet and vest are required by default. Masks are optional unless enabled in site configuration.
                         </p>
                         <div className="flex flex-col gap-2">
-                          {REQUIRED_PPE.map((ppe) => (
+                          {PPE_ITEMS.map((ppe) => (
                             <div
                               key={ppe.name}
                               className="flex justify-between items-center p-3 rounded transition-colors"
@@ -302,7 +304,7 @@ const SettingsPage = () => {
                                 className="font-data-label px-2 py-1 rounded"
                                 style={{ color: '#10B981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', fontSize: '10px' }}
                               >
-                                REQUIRED
+                                {requiredPpe.includes(ppe.key) ? 'REQUIRED' : 'OPTIONAL'}
                               </span>
                             </div>
                           ))}
