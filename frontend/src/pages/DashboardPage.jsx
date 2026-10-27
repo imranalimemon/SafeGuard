@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getDashboardStats, listCameras } from '../api/client';
+import { getDashboardStats, listCameras, reviewViolation } from '../api/client';
 import { useSystemHealth } from '../context/SystemHealth';
 import { createLiveStream } from '../api/liveStream';
+
+import { ReviewActions, ReviewState } from '../components/ViolationReview';
 
 const SELECTED_CAMERA_KEY = 'sg_selected_camera';
 
@@ -45,51 +47,14 @@ const StatTile = ({ label, value, accent = false }) => (
   </div>
 );
 
-const IncidentItem = ({ type, camera, confidence, time, severity = 'critical', resolved = false }) => {
-  const borderColor = severity === 'critical' ? '#FF2D55' : severity === 'warn' ? '#FF6B00' : 'var(--color-outline)';
-  const typeColor   = severity === 'critical' ? '#FF2D55' : severity === 'warn' ? '#FF6B00' : 'var(--color-on-surface-variant)';
-  return (
-    <div
-      className="p-3 cursor-pointer transition-colors"
-      style={{
-        borderBottom: '1px solid var(--color-outline-variant)',
-        borderLeft: `2px solid ${borderColor}`,
-        background: resolved ? 'transparent' : severity === 'critical' ? 'rgba(255,45,85,0.05)' : 'transparent',
-        opacity: resolved ? 0.55 : 1,
-      }}
-    >
-      <div className="flex justify-between items-start mb-1">
-        <span className="font-data-label font-bold" style={{ color: typeColor }}>{type}</span>
-        <span className="font-data-value" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{time}</span>
-      </div>
-      <div style={{ fontSize: '12px', color: 'var(--color-on-surface-variant)', marginBottom: resolved || severity === 'warn' ? 0 : '8px' }}>
-        {camera}{confidence != null ? ` · CONF ${confidence}%` : ''}
-        {resolved ? ' · RESOLVED' : ''}
-      </div>
-      {!resolved && severity === 'critical' && (
-        <div className="flex gap-2">
-          <button
-            disabled
-            title="Acknowledge — Coming soon"
-            className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontSize: '10px', background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-          >
-            Acknowledge — Coming soon
-          </button>
-          <button
-            disabled
-            title="Escalate — Coming soon"
-            className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontSize: '10px', background: 'transparent', border: '1px solid rgba(255,45,85,0.4)', color: '#FF2D55' }}
-          >
-            Escalate — Coming soon
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
+const IncidentItem = ({ violation, onAction, busy }) => (
+  <div className="p-3" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
+    <div>{violation.violation_type}</div>
+    <div>{violation.source || 'Source not available'} ? {violation.timestamp} UTC</div>
+    <ReviewState violation={violation} />
+    <ReviewActions violation={violation} onAction={onAction} busy={busy} />
+  </div>
+);
 
 const DashboardPage = () => {
   const health = useSystemHealth();
@@ -98,6 +63,8 @@ const DashboardPage = () => {
   const [frameKey, setFrameKey] = useState(null);
   const [liveStats, setLiveStats] = useState(null);
   const [stats, setStats] = useState(null);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [actionError, setActionError] = useState(null);
   const [statsError, setStatsError] = useState(null);
   const [streamError, setStreamError] = useState(null);
   const [camerasLoaded, setCamerasLoaded] = useState(false);
@@ -128,6 +95,13 @@ const DashboardPage = () => {
       setStats(res.data);
       setStatsError(null);
     } catch { setStats(null); setStatsError('Violation history is not available.'); }
+  };
+
+  const handleReview = async (id, action) => {
+    setReviewBusy(true); setActionError(null);
+    try { await reviewViolation(id, action); await fetchStats(); }
+    catch (err) { setActionError(err.response?.data?.detail || 'Could not save review action.'); }
+    finally { setReviewBusy(false); }
   };
 
   const fetchCameras = async () => {
@@ -183,6 +157,7 @@ const DashboardPage = () => {
       <section className="flex-1 flex flex-col gap-2 p-4 h-full overflow-hidden">
         {health.state === 'offline' && <p role="status">Backend offline. Live data is not available.</p>}
         {health.state === 'degraded' && <p role="status">Backend reachable, but {!health.model_loaded ? 'model is unavailable' : 'database is unavailable'}.</p>}
+        {actionError && <p role="alert">{actionError}</p>}
         {statsError && health.reachable && <p role="alert">{statsError}</p>}
 
         {/* Selected camera feed; annotations are already drawn by the backend. */}
@@ -238,15 +213,6 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* PTZ hover controls */}
-          <div className="absolute bottom-3 right-3 glass-panel rounded p-1.5 flex gap-1.5 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-            {['zoom_in', 'zoom_out', 'crop_free'].map((icon) => (
-              <button key={icon} disabled title="PTZ — Coming soon" aria-label={`${icon} — Coming soon`} className="p-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: '#fff' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{icon}</span>
-              </button>
-            ))}
-            <span className="font-data-label text-white" style={{ fontSize: '10px' }}>Coming soon</span>
-          </div>
         </div>
 
       </section>
@@ -262,8 +228,10 @@ const DashboardPage = () => {
           icon="verified_user"
         />
 
+        <p className="font-data-label">Live compliance excludes workers with an unassessable mask and no other violation.</p>
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-2">
+          <StatTile label="MASK NOT ASSESSABLE" value={current?.mask_not_assessable ?? 'Not available'} />
           <StatTile label="WORKERS IN FRAME" value={current?.persons ?? 'Not available'} />
           <StatTile label="VIOLATIONS IN FRAME" value={current?.violations ?? 'Not available'} accent />
           <StatTile label="RECORDED TODAY (UTC)" value={history?.today_violations ?? 'Not available'} />
@@ -282,10 +250,7 @@ const DashboardPage = () => {
               ? recentViolations.slice(0, 10).map((v, i) => (
                 <IncidentItem
                   key={v.id ?? i}
-                  type={(v.violation_type || 'UNKNOWN').toUpperCase()}
-                  camera={v.source ?? 'Source not available'}
-                  confidence={v.confidence != null ? Math.round(v.confidence * 100) : null}
-                  time={new Date(v.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  violation={v} onAction={handleReview} busy={reviewBusy}
                 />
               ))
               : (

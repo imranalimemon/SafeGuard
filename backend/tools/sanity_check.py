@@ -106,7 +106,7 @@ def main():
             started = time.perf_counter()
             detections = detector.detect(image)
             detection_ms = (time.perf_counter() - started) * 1000
-            workers = compute_violations(detections)
+            workers = compute_violations(detections, frame=image)
             annotated = annotate_frame(image, detections, workers)
             worker_results = []
             for index, worker in enumerate(workers, 1):

@@ -204,6 +204,7 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         self.socket = FakeSocket()
         self.socket.accept = unittest.mock.AsyncMock()
         self.socket.close = unittest.mock.AsyncMock()
+        self.original_writer = self.api._write_violations
         self.api._write_violations = Mock(side_effect=AssertionError('No DB writes allowed'))
         self.api._dispatch_alerts = Mock(side_effect=AssertionError('No alerts allowed'))
 
@@ -253,11 +254,26 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.api._stream_packet(self.camera, frame, None)['stats'])
         worker = {'person_bbox': [1, 1, 15, 15], 'missing_ppe': [], 'status': 'COMPLIANT'}
         packet = self.api._stream_packet(self.camera, frame, ([], [worker]))
-        self.assertEqual(packet['stats'], {'persons': 1, 'compliant': 1, 'violations': 0, 'compliance_rate': 100.0})
+        self.assertEqual(packet['stats'], {'persons': 1, 'compliant': 1, 'violations': 0, 'compliance_rate': 100.0, 'mask_not_assessable': 0})
         np.testing.assert_array_equal(self.annotate.call_args.args[0], frame)
         self.assertEqual(self.annotate.call_args.args[2], [worker])
         self.api._write_violations.assert_not_called()
         self.api._dispatch_alerts.assert_not_called()
+
+    def test_unknown_mask_is_not_compliant_and_never_logged_as_violation(self):
+        import numpy as np
+        frame = np.zeros((16, 16, 3), dtype=np.uint8)
+        worker = {'person_bbox': [0, 0, 15, 15], 'missing_ppe': [], 'status': 'NOT_ASSESSABLE', 'mask_assessment': 'not assessable'}
+        packet = self.api._stream_packet(self.camera, frame, ([], [worker]))
+        self.assertEqual(packet['stats']['compliant'], 0)
+        self.assertEqual(packet['stats']['violations'], 0)
+        self.assertEqual(packet['stats']['mask_not_assessable'], 1)
+        self.assertIsNone(packet['stats']['compliance_rate'])
+        self.assertEqual(packet['workers'], [worker])
+        self.assertEqual(self.original_writer(self.camera, frame, [], [worker]), (0, []))
+        self.db.add.assert_not_called()
+        self.db.commit.assert_not_called()
+        self.api.trigger_alerts.assert_not_called()
 
 
 if __name__ == '__main__':

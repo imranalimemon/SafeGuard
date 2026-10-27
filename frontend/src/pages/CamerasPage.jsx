@@ -11,7 +11,7 @@ const emptyForm = () => ({
   name: '', source_type: 'webcam', url: '',
   username: '', password: '', location: '',
   resolution: '1920x1080', frame_rate: '30',
-  ptz_enabled: false, enabled: true,
+  enabled: true,
 });
 
 const StatusBadge = ({ enabled }) => (
@@ -160,7 +160,6 @@ export const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, test
 
 /* ── Detail / Config Panel ───────────────────────────────── */
 const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, formError, editing }) => {
-  const ptzEnabled = form.ptz_enabled ?? false;
 
   return (
     <div className="w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline-variant)' }}>
@@ -244,53 +243,7 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
           </div>
         </div>
 
-        {/* PTZ Controls */}
-        <div>
-          <div className="flex justify-between items-center pb-2 mb-3" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
-            <h3 className="font-data-label uppercase tracking-wider" style={{ color: '#FF6B00', fontSize: '11px' }}>PTZ Control</h3>
-            <div className="flex items-center gap-2">
-              <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Coming soon</span>
-              <button
-                disabled
-                title="PTZ — Coming soon"
-                aria-label="PTZ — Coming soon"
-                className="w-8 h-4 rounded-full relative transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: ptzEnabled ? '#FF6B00' : 'var(--color-surface-container-high)' }}
-              >
-                <div className="w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all" style={{ left: ptzEnabled ? '18px' : '2px' }} />
-              </button>
-            </div>
-          </div>
 
-          {ptzEnabled && (
-            <>
-              {/* D-Pad */}
-              <div className="flex justify-center my-2">
-                <div className="relative w-28 h-28 rounded-full flex items-center justify-center" style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)' }}>
-                  {[
-                    { icon: 'keyboard_arrow_up',    style: { top: '6px', left: '50%', transform: 'translateX(-50%)' } },
-                    { icon: 'keyboard_arrow_down',  style: { bottom: '6px', left: '50%', transform: 'translateX(-50%)' } },
-                    { icon: 'keyboard_arrow_left',  style: { left: '6px', top: '50%', transform: 'translateY(-50%)' } },
-                    { icon: 'keyboard_arrow_right', style: { right: '6px', top: '50%', transform: 'translateY(-50%)' } },
-                  ].map(({ icon, style }) => (
-                    <button key={icon} disabled title="PTZ — Coming soon" aria-label={`${icon} — Coming soon`} className="absolute p-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: 'var(--color-on-surface-variant)', ...style }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>{icon}</span>
-                    </button>
-                  ))}
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline-variant)' }}>
-                    <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,107,0,0.5)' }} />
-                  </div>
-                </div>
-              </div>
-              {/* Zoom */}
-              <div className="flex items-center gap-3 mt-3">
-                <span className="material-symbols-outlined" style={{ color: 'var(--color-on-surface-variant)', fontSize: '16px' }}>zoom_out</span>
-                <input type="range" min="1" max="10" defaultValue="1" disabled title="PTZ zoom — Coming soon" aria-label="PTZ zoom — Coming soon" className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#FF6B00' }} />
-                <span className="material-symbols-outlined" style={{ color: 'var(--color-on-surface-variant)', fontSize: '16px' }}>zoom_in</span>
-              </div>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Footer buttons */}
@@ -593,7 +546,6 @@ const CamerasPage = () => {
       location: camera.location || '',
       resolution: camera.resolution || '1920x1080',
       frame_rate: camera.frame_rate || '30',
-      ptz_enabled: camera.ptz_enabled ?? false,
       enabled: camera.enabled ?? true,
     });
     setFormError('');
@@ -715,7 +667,7 @@ const CamerasPage = () => {
           )}
         </div>
 
-        {/* Config / PTZ Panel */}
+        {/* Camera configuration */}
         {panelOpen && (
           <ConfigPanel
             camera={editing}

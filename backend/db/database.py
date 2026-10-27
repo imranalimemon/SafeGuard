@@ -29,6 +29,11 @@ def ensure_violation_columns(engine) -> None:
         "bbox": "VARCHAR",
         "detections": "TEXT",
         "source": "VARCHAR",
+        "review_status": "VARCHAR NOT NULL DEFAULT 'open'",
+        "acknowledged_at": "DATETIME",
+        "escalated_at": "DATETIME",
+        "archived_at": "DATETIME",
+        "mask_assessment": "VARCHAR",
     }
     try:
         with engine.connect() as conn:
@@ -45,10 +50,8 @@ def ensure_violation_columns(engine) -> None:
                     )
             conn.commit()
     except Exception:
-        # SQLite is forgiving, but if the DB is locked or the table doesn't
-        # exist yet (first run before create_all), skip silently — the
-        # caller will fall back to create_all semantics.
-        pass
+        # Do not start an API with an incompatible schema if migration fails.
+        raise
 
 
 def init_db():

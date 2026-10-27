@@ -56,7 +56,7 @@ async def upload_image(
         return {"error": "Could not read image file"}
 
     detections = det.detect(image)
-    violations = compute_violations(detections)
+    violations = compute_violations(detections, frame=frame)
     annotated = annotate_frame(image.copy(), detections, violations)
 
     # Save annotated screenshot
@@ -68,7 +68,7 @@ async def upload_image(
     # Compute stats
     total_persons = len(violations)
     violating = sum(1 for v in violations if v["status"] == "VIOLATION")
-    compliant = max(0, total_persons - violating)
+    compliant = sum(v["status"] == "COMPLIANT" for v in violations)
 
     full_detections_json = json.dumps(_serialize_detections(detections))
 
@@ -94,6 +94,7 @@ async def upload_image(
             bbox=json.dumps([int(x) for x in v["person_bbox"]]),
             detections=full_detections_json,
             source="image_upload",
+            mask_assessment=v.get("mask_assessment"),
         )
         db.add(db_violation)
         db.commit()
@@ -130,6 +131,8 @@ async def upload_image(
                 "person_bbox": v["person_bbox"],
                 "missing_ppe": v["missing_ppe"],
                 "has_ppe": v["has_ppe"],
+                "mask_assessment": v["mask_assessment"],
+                "not_assessable": v["not_assessable"],
                 "status": v["status"],
                 "confidence": round(v["confidence"], 3),
             }
@@ -139,6 +142,7 @@ async def upload_image(
         "stats": {
             "total_persons": total_persons,
             "compliant": compliant,
+            "mask_not_assessable": sum(v.get("mask_assessment") == "not assessable" for v in violations),
             "violations": violating,
             "suppressed_by_cooldown": suppressed_count,
         },
@@ -158,6 +162,7 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
     violation_frames = []
     total_violations_detected = 0
     total_suppressed = 0
+    mask_assessment_frames = []
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -168,8 +173,15 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
             continue
 
         detections = det.detect(frame)
-        violations = compute_violations(detections)
+        violations = compute_violations(detections, frame=frame)
         violating = [v for v in violations if v["status"] == "VIOLATION"]
+        mask_assessment_frames.append({
+            "frame_number": frame_count,
+            "workers": [
+                {"person_bbox": v["person_bbox"], "mask_assessment": v["mask_assessment"], "status": v["status"]}
+                for v in violations
+            ],
+        })
 
         if violating:
             annotated = annotate_frame(frame.copy(), detections, violations)
@@ -201,6 +213,7 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
                     bbox=json.dumps([int(x) for x in v["person_bbox"]]),
                     detections=full_detections_json,
                     source="video_upload",
+                    mask_assessment=v.get("mask_assessment"),
                 )
                 db.add(db_violation)
                 db.commit()
@@ -244,4 +257,9 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         "violations_logged": total_violations_detected - total_suppressed,
         "suppressed_by_cooldown": total_suppressed,
         "violation_frames": violation_frames,
+        "mask_assessment_frames": mask_assessment_frames,
+        "mask_not_assessable_observations": sum(
+            w["mask_assessment"] == "not assessable"
+            for entry in mask_assessment_frames for w in entry["workers"]
+        ),
     }

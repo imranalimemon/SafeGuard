@@ -16,7 +16,7 @@ def load_module(name, filename):
     config = ModuleType("config")
     config.settings = SimpleNamespace(
         PERSON_CLASS_ID=2,
-        REQUIRED_PPE=["Helmet", "Safety Vest"],
+        REQUIRED_PPE=["Helmet", "Safety Vest", "Face Mask"],
         VIOLATION_COOLDOWN_SECONDS=10,
     )
     spec = importlib.util.spec_from_file_location(name, BACKEND / "detection" / filename)
@@ -75,7 +75,7 @@ class PPEAssociationTests(unittest.TestCase):
         self.person = detection(2, [100, 100, 200, 400])
 
     def assert_missing(self, ppe, required):
-        results = logic.compute_violations([self.person, ppe], [required])
+        results = logic.compute_violations([self.person, ppe], [required], face_assessor=lambda frame, box: True)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["status"], "VIOLATION")
         self.assertEqual(results[0]["missing_ppe"], [required])
@@ -124,7 +124,7 @@ class PPEAssociationTests(unittest.TestCase):
         result = logic.compute_violations([
             self.person, detection(1, [125, 95, 175, 135]),
             detection(3, [110, 170, 190, 280]),
-        ], ["Helmet", "Safety Vest", "Face Mask"])[0]
+        ], ["Helmet", "Safety Vest", "Face Mask"], face_assessor=lambda frame, box: True)[0]
         self.assertEqual(result["missing_ppe"], ["Face Mask"])
 
     def test_close_up_mask_from_fac_test_00005_is_associated(self):
@@ -139,16 +139,17 @@ class PPEAssociationTests(unittest.TestCase):
     def test_mask_at_feet_is_not_associated(self):
         self.assert_missing(detection(0, [125, 350, 175, 380]), "Face Mask")
 
-    def test_default_helmet_and_vest_do_not_require_mask(self):
+    def test_default_mask_is_not_assessable_without_face_evidence(self):
         result = logic.compute_violations([
             self.person, detection(1, [125, 95, 175, 135]),
             detection(3, [110, 170, 190, 280]),
         ])[0]
-        self.assertEqual(result["status"], "COMPLIANT")
+        self.assertEqual(result["status"], "NOT_ASSESSABLE")
+        self.assertEqual(result["mask_assessment"], "not assessable")
 
-    def test_empty_requirements_fall_back_to_helmet_and_vest(self):
-        result = logic.compute_violations([self.person], [])[0]
-        self.assertEqual(result["missing_ppe"], ["Helmet", "Safety Vest"])
+    def test_empty_requirements_use_all_three_with_mask_gate(self):
+        result = logic.compute_violations([self.person], [], face_assessor=lambda frame, box: True)[0]
+        self.assertEqual(result["missing_ppe"], ["Helmet", "Safety Vest", "Face Mask"])
 
     def test_overlapping_workers_each_keep_their_own_helmet(self):
         results = logic.compute_violations([

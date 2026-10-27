@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { getViolations, shareViolationWhatsApp, getAlertSettings } from '../api/client';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { getViolations, shareViolationWhatsApp, getAlertSettings, reviewViolation } from '../api/client';
+
+import { ReviewActions, ReviewState } from '../components/ViolationReview';
+import { collectViolations, downloadCSV, buildPDF } from '../api/violationReports';
 
 const VIOLATION_TYPES = ['All Types', 'Helmet', 'Safety Vest', 'Face Mask'];
 
@@ -202,7 +205,7 @@ const WhatsAppSharePanel = ({ violation }) => {
 };
 
 /* ── Detail Modal ────────────────────────────────────────── */
-const ViolationModal = ({ violation, onClose }) => {
+const ViolationModal = ({ violation, onClose, onAction, busy }) => {
   if (!violation) return null;
 
   return (
@@ -237,15 +240,7 @@ const ViolationModal = ({ violation, onClose }) => {
                 <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>No evidence image</span>
               </div>
             )}
-            {/* Zoom controls overlay */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 glass-panel rounded-full px-4 py-2 flex gap-3 items-center">
-              {['zoom_in', 'zoom_out', 'file_download'].map((icon) => (
-                <button key={icon} disabled title="Evidence controls — Coming soon" aria-label={`${icon} — Coming soon`} className="transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: '#fff' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{icon}</span>
-                </button>
-              ))}
-              <span className="font-data-label text-white" style={{ fontSize: '10px' }}>Coming soon</span>
-            </div>
+
           </div>
 
           {/* Metadata panel */}
@@ -277,25 +272,9 @@ const ViolationModal = ({ violation, onClose }) => {
                 </div>
               )}
             </div>
-            <div>
-              <div className="font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>ACTIONS</div>
-              <div className="flex flex-col gap-2">
-                <button
-                  disabled
-                  className="w-full py-2 rounded font-data-value transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)', color: 'var(--color-on-surface)', fontSize: '12px' }}
-                >
-                  Mark False Positive — Coming soon
-                </button>
-                <button
-                  disabled
-                  className="w-full py-2 rounded font-data-value font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: '#FF6B00', color: '#000', fontSize: '12px' }}
-                >
-                  Export to Incident Report — Coming soon
-                </button>
-              </div>
-            </div>
+            <ReviewState violation={violation} />
+            <ReviewActions violation={violation} onAction={onAction} busy={busy} />
+            {violation.screenshot_path && <a href={violation.screenshot_path} target="_blank" rel="noreferrer">Open full-size evidence</a>}
 
             {/* ── WhatsApp Share Panel ── */}
             <WhatsAppSharePanel violation={violation} />
@@ -321,19 +300,26 @@ const ViolationsPage = () => {
   const [dateTo, setDateTo] = useState('');
   const [violationType, setViolationType] = useState('All Types');
   const [cameraId, setCameraId] = useState('');
+  const [archived, setArchived] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState(null);
+  const requestRef = useRef(0);
+  const filters = {
+    ...(dateFrom && { date_from: dateFrom }), ...(dateTo && { date_to: dateTo }),
+    ...(violationType !== 'All Types' && { violation_type: violationType }),
+    ...(cameraId.trim() && { camera_id: cameraId.trim() }),
+    archived, ...(reviewStatus && { review_status: reviewStatus }),
+  };
+
 
   const fetchViolations = useCallback(async () => {
+    const request = ++requestRef.current;
     setIsLoading(true);
     try {
-      const params = {
-        page,
-        per_page: PAGE_SIZE,
-        ...(dateFrom && { date_from: dateFrom }),
-        ...(dateTo && { date_to: dateTo }),
-        ...(violationType !== 'All Types' && { violation_type: violationType }),
-        ...(cameraId.trim() && { camera_id: cameraId.trim() }),
-      };
+      const params = { ...filters, page, per_page: PAGE_SIZE };
       const res = await getViolations(params);
+      if (request !== requestRef.current) return;
       setError(null);
       const data = res.data;
       if (Array.isArray(data)) {
@@ -343,17 +329,39 @@ const ViolationsPage = () => {
         setViolations(data.violations ?? data.items ?? []);
         setTotal(data.total ?? 0);
       }
-    } catch { setViolations([]); setTotal(null); setError('Violation history is not available.'); }
-    finally { setIsLoading(false); }
-  }, [page, dateFrom, dateTo, violationType, cameraId]);
+    } catch {
+      if (request === requestRef.current) { setViolations([]); setTotal(null); setError('Violation history is not available.'); }
+    }
+    finally { if (request === requestRef.current) setIsLoading(false); }
+  }, [page, dateFrom, dateTo, violationType, cameraId, archived, reviewStatus]);
 
   useEffect(() => { fetchViolations(); }, [fetchViolations]);
 
   const applyFilters = () => { setPage(1); fetchViolations(); };
   const resetFilters = () => {
-    setDateFrom(''); setDateTo(''); setViolationType('All Types'); setCameraId('');
+    setDateFrom(''); setDateTo(''); setViolationType('All Types'); setCameraId(''); setArchived(false); setReviewStatus('');
     setPage(1);
   };
+
+  const handleReview = async (id, action) => {
+    setBusy(true); setActionError(null);
+    try {
+      const { data } = await reviewViolation(id, action);
+      setSelected(current => current?.id === id ? data : current);
+      await fetchViolations();
+    } catch (err) { setActionError(err.response?.data?.detail || 'Could not save review action.'); }
+    finally { setBusy(false); }
+  };
+  const exportReport = async (format) => {
+    setBusy(true); setActionError(null);
+    try {
+      const rows = await collectViolations(getViolations, filters);
+      if (format === 'csv') downloadCSV(rows);
+      else (await buildPDF(rows, filters)).save('safeguard-violations.pdf');
+    } catch (err) { setActionError(`Export failed: ${err.message}`); }
+    finally { setBusy(false); }
+  };
+  useEffect(() => { setPage(1); }, [dateFrom, dateTo, violationType, cameraId, archived, reviewStatus]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -425,6 +433,12 @@ const ViolationsPage = () => {
 
           </div>
 
+          <div className="p-4 flex flex-col gap-3">
+            <label><input type="checkbox" checked={archived} onChange={e => setArchived(e.target.checked)} /> Archived evidence only</label>
+            <label>Review status <select value={reviewStatus} onChange={e => setReviewStatus(e.target.value)}>
+              <option value="">All statuses</option><option value="open">Open</option><option value="acknowledged">Acknowledged</option><option value="escalated">Escalated</option>
+            </select></label>
+          </div>
           <div className="p-4 mt-auto" style={{ borderTop: '1px solid var(--color-outline-variant)' }}>
             <button
               onClick={applyFilters}
@@ -453,28 +467,13 @@ const ViolationsPage = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              {[
-                { icon: 'delete', label: 'Archive Evidence' },
-                { icon: 'download', label: 'Export CSV' },
-              ].map(({ icon, label }) => (
-                <button key={label} disabled title={`${label} — Coming soon`} className="flex items-center gap-2 px-4 py-2 rounded font-body-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', background: 'transparent', fontSize: '13px' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>{icon}</span>
-                  {label} — Coming soon
-                </button>
-              ))}
-              <button
-                disabled
-                title="Export PDF Report — Coming soon"
-                aria-label="Export PDF Report — Coming soon"
-                className="flex items-center gap-2 px-4 py-2 rounded font-body-sm font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: '#FF6B00', color: '#000', fontSize: '13px' }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>picture_as_pdf</span>
-                Coming soon
-              </button>
+              <button disabled={busy || isLoading} onClick={() => exportReport('csv')}>Export CSV</button>
+              <button disabled={busy || isLoading} onClick={() => exportReport('pdf')}>Export PDF Report</button>
+              {busy && <span role="status">Processing?</span>}
             </div>
           </div>
 
+          {actionError && <p role="alert">{actionError}</p>}
           {/* Table */}
           <div
             className="flex-1 flex flex-col overflow-hidden mx-2 mb-2 rounded-lg"
@@ -484,7 +483,7 @@ const ViolationsPage = () => {
               <table className="w-full text-left border-collapse">
                 <thead style={{ background: 'var(--color-surface-container)', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid var(--color-outline-variant)' }}>
                   <tr>
-                    {['EVIDENCE', 'TIMESTAMP (UTC)', 'VIOLATION TYPE', 'CAMERA / LOC', 'CONFIDENCE', 'ACTION'].map((h, i) => (
+                    {['EVIDENCE', 'TIMESTAMP (UTC)', 'VIOLATION TYPE', 'CAMERA / LOC', 'CONFIDENCE', 'REVIEW / ACTIONS'].map((h, i) => (
                       <th key={h} className="p-3 font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px', textAlign: i === 5 ? 'right' : 'left' }}>{h}</th>
                     ))}
                   </tr>
@@ -528,9 +527,8 @@ const ViolationsPage = () => {
                           </span>
                         </td>
                         <td className="p-3 text-right">
-                          <button className="p-1 transition-colors hover:text-primary" style={{ color: 'var(--color-on-surface-variant)' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>open_in_new</span>
-                          </button>
+                          <ReviewState violation={v} />
+                          <ReviewActions violation={v} onAction={handleReview} busy={busy} />
                         </td>
                       </tr>
                     ))
@@ -583,7 +581,7 @@ const ViolationsPage = () => {
       </div>
 
       {/* Detail Modal */}
-      {selected && <ViolationModal violation={selected} onClose={() => setSelected(null)} />}
+      {selected && <ViolationModal violation={selected} onClose={() => setSelected(null)} onAction={handleReview} busy={busy} />}
     </>
   );
 };

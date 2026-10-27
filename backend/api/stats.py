@@ -21,7 +21,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     total_persons_detected = None
     compliance_rate = None
 
-    recent_violations_rows = db.query(Violation).order_by(Violation.timestamp.desc()).limit(5).all()
+    recent_violations_rows = db.query(Violation).filter(Violation.archived_at.is_(None)).order_by(Violation.timestamp.desc(), Violation.id.desc()).limit(5).all()
     recent_violations = [_serialize_violation(r) for r in recent_violations_rows]
 
     # Calculate violations by type

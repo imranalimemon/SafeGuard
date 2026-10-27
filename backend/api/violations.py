@@ -3,7 +3,7 @@ from datetime import date as _date, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Literal
 
 from db.database import get_db
 from db.models import Violation
@@ -53,6 +53,11 @@ def _serialize_violation(row: Violation) -> dict:
         "missing_ppe": row.missing_ppe,
         "details": row.details,
         "source": row.source,
+        "review_status": row.review_status,
+        "acknowledged_at": row.acknowledged_at,
+        "escalated_at": row.escalated_at,
+        "archived_at": row.archived_at,
+        "mask_assessment": row.mask_assessment,
         "bbox": _safe_json_load(row.bbox, None),
         "detections": _safe_json_load(row.detections, []),
     }
@@ -78,6 +83,8 @@ def get_violations(
     # Other filters
     camera_id: Optional[int] = None,
     violation_type: Optional[str] = None,
+    archived: bool = False,
+    review_status: Optional[Literal["open", "acknowledged", "escalated"]] = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -110,6 +117,9 @@ def get_violations(
     )
 
     base = db.query(Violation)
+    base = base.filter(Violation.archived_at.isnot(None) if archived else Violation.archived_at.is_(None))
+    if review_status:
+        base = base.filter(Violation.review_status == review_status)
     if eff_start:
         base = base.filter(Violation.timestamp >= eff_start)
     if eff_end:
@@ -131,7 +141,7 @@ def get_violations(
         offset = (page - 1) * per_page
         limit = per_page
         rows = (
-            base.order_by(Violation.timestamp.desc())
+            base.order_by(Violation.timestamp.desc(), Violation.id.desc())
             .offset(offset)
             .limit(limit)
             .all()
@@ -144,8 +154,32 @@ def get_violations(
         }
 
     # No `page` supplied → legacy flat-array response.
-    rows = base.order_by(Violation.timestamp.desc()).offset(offset).limit(limit).all()
+    rows = base.order_by(Violation.timestamp.desc(), Violation.id.desc()).offset(offset).limit(limit).all()
     return [_serialize_violation(r) for r in rows]
+
+
+class ReviewUpdate(BaseModel):
+    action: Literal["acknowledge", "escalate", "archive"]
+
+
+@router.patch("/api/violations/{violation_id}")
+def review_violation(violation_id: int, update: ReviewUpdate, db: Session = Depends(get_db)):
+    row = db.query(Violation).filter(Violation.id == violation_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Violation not found")
+    now = datetime.utcnow()
+    if update.action == "archive":
+        row.archived_at = row.archived_at or now
+    elif update.action == "acknowledge":
+        row.acknowledged_at = row.acknowledged_at or now
+        if row.review_status != "escalated":
+            row.review_status = "acknowledged"
+    elif update.action == "escalate":
+        row.escalated_at = row.escalated_at or now
+        row.review_status = "escalated"
+    db.commit()
+    db.refresh(row)
+    return _serialize_violation(row)
 
 
 @router.get("/api/violations/{violation_id}")

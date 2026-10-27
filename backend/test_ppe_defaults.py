@@ -27,19 +27,19 @@ def fresh_config(environment=None):
 
 
 class PPEDefaultTests(unittest.TestCase):
-    def test_default_requires_helmet_and_vest(self):
-        self.assertEqual(fresh_config().settings.REQUIRED_PPE, ["Helmet", "Safety Vest"])
+    def test_default_requires_all_three_ppe(self):
+        self.assertEqual(fresh_config().settings.REQUIRED_PPE, ["Helmet", "Safety Vest", "Face Mask"])
 
-    def test_mask_can_be_enabled_through_configuration(self):
-        config = fresh_config({"REQUIRED_PPE": "Helmet,Safety Vest,Face Mask"})
+    def test_legacy_two_item_environment_cannot_disable_mask_objective(self):
+        config = fresh_config({"REQUIRED_PPE": "Helmet,Safety Vest"})
         self.assertEqual(config.settings.REQUIRED_PPE, ["Helmet", "Safety Vest", "Face Mask"])
 
     def test_default_confidence_stays_at_half(self):
         self.assertEqual(fresh_config().settings.CONFIDENCE_THRESHOLD, 0.5)
 
-    def check_database_settings(self, require_mask=False, existing_row=False):
+    def check_database_settings(self, legacy_policy=False, existing_row=False):
         config = fresh_config(
-            {"REQUIRED_PPE": "Helmet,Safety Vest,Face Mask"} if require_mask else {}
+            {"REQUIRED_PPE": "Helmet,Safety Vest"} if legacy_policy else {}
         )
         config.settings.DATABASE_URL = "sqlite:///:memory:"
         db_package = ModuleType("db")
@@ -59,7 +59,7 @@ class PPEDefaultTests(unittest.TestCase):
                     response = api.get_alert_settings(db=session)
                     self.assertEqual(
                         response["required_ppe"],
-                        ["Helmet", "Safety Vest"] + (["Face Mask"] if require_mask else []),
+                        ["Helmet", "Safety Vest", "Face Mask"],
                     )
                     self.assertEqual(session.query(models.AlertSettings).count(), int(existing_row))
                     if existing_row:
@@ -67,11 +67,11 @@ class PPEDefaultTests(unittest.TestCase):
             finally:
                 database.engine.dispose()
 
-    def test_fresh_database_starts_with_helmet_and_vest(self):
+    def test_fresh_database_starts_with_all_three_ppe(self):
         self.check_database_settings()
 
-    def test_fresh_database_honors_explicit_mask_opt_in(self):
-        self.check_database_settings(require_mask=True)
+    def test_fresh_database_ignores_legacy_two_item_policy(self):
+        self.check_database_settings(legacy_policy=True)
 
     def test_existing_settings_row_is_preserved(self):
         self.check_database_settings(existing_row=True)

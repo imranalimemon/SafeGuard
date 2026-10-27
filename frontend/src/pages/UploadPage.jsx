@@ -25,9 +25,7 @@ const DetectionCard = ({ result, model }) => {
         {[
           { label: 'PERSONS', value: persons, color: 'var(--color-data-blue)' },
           { label: 'VIOLATIONS', value: violating, color: violating > 0 ? '#FF2D55' : '#10B981' },
-          // Inference time isn't tracked yet — render as `—` rather than a
-          // bogus number from a missing field.
-          { label: 'INFER TIME', value: '—', color: 'var(--color-on-surface-variant)' },
+          { label: 'MASK NOT ASSESSABLE', value: stats.mask_not_assessable ?? 'Not available', color: 'var(--color-on-surface-variant)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded p-3 text-center" style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}>
             <div className="font-data-label mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{label}</div>
@@ -35,6 +33,8 @@ const DetectionCard = ({ result, model }) => {
           </div>
         ))}
       </div>
+      {result.mask_not_assessable_observations != null && <p className="font-data-label">Video: {result.mask_not_assessable_observations} mask-not-assessable worker observations across sampled frames (not unique workers).</p>}
+      {(result.violations ?? []).map((worker, i) => <p key={`mask-${i}`} className="font-data-label">Worker {i + 1}: mask {worker.mask_assessment || 'not assessed'}</p>)}
       {violations.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {violations.map((v, i) => (

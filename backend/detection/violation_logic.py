@@ -135,7 +135,8 @@ def calculate_association_score(person_box: List[int], ppe_box: List[int], ppe_t
     return score
 
 
-def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]] = None) -> List[Dict]:
+def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]] = None,
+                       frame=None, face_assessor=None) -> List[Dict]:
     """Analyze PPE compliance for detected persons only.
 
     Returns a list of dictionaries for each detected person:
@@ -160,7 +161,7 @@ def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]]
             canonical_required.append(c)
 
     if not canonical_required:
-        canonical_required = ["Helmet", "Safety Vest"]
+        canonical_required = ["Helmet", "Safety Vest", "Face Mask"]
 
     # Separate Person and PPE detections
     persons = [d for d in detections if d.get("class_id") == settings.PERSON_CLASS_ID]
@@ -205,20 +206,48 @@ def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]]
         matched_ppes = person_ppe_map.get(p_idx, [])
         has_ppe = sorted(list(set(ppe["canonical_name"] for ppe in matched_ppes)))
 
-        # Missing elements: required items that are NOT in has_ppe
+        mask_assessment = "not required"
+        not_assessable = []
+        if "Face Mask" in canonical_required:
+            if "Face Mask" in has_ppe:
+                mask_assessment = "detected"
+            else:
+                box = person["bbox"]
+                large_enough = (
+                    box[2] - box[0] >= getattr(settings, "MASK_MIN_PERSON_WIDTH", 100)
+                    and box[3] - box[1] >= getattr(settings, "MASK_MIN_PERSON_HEIGHT", 160)
+                )
+                if face_assessor is None and large_enough and frame is not None:
+                    from .face_visibility import frontal_face_visible
+                    assessor = frontal_face_visible
+                else:
+                    assessor = face_assessor
+                visible = large_enough and assessor is not None and assessor(frame, box)
+                mask_assessment = "missing" if visible else "not assessable"
+                if not visible:
+                    not_assessable.append("Face Mask")
+
+        # Unknown mask visibility must never create a mask violation/alert.
         missing_ppe = [item for item in canonical_required if item not in has_ppe]
+        missing_ppe = [item for item in missing_ppe if item not in not_assessable]
 
         status = "VIOLATION" if len(missing_ppe) > 0 else "COMPLIANT"
+        if not missing_ppe and not_assessable:
+            status = "NOT_ASSESSABLE"
         violation_type = f"Missing: {', '.join(missing_ppe)}" if missing_ppe else "Compliant"
+        if status == "NOT_ASSESSABLE":
+            violation_type = "Mask not assessable"
 
         total_req = len(canonical_required)
-        compliance_score = round((total_req - len(missing_ppe)) / float(total_req), 2) if total_req > 0 else 1.0
+        compliance_score = None if not_assessable else round((total_req - len(missing_ppe)) / float(total_req), 2)
 
         results.append({
             "person_bbox": [int(x) for x in person["bbox"]],
             "status": status,
             "missing_ppe": missing_ppe,
             "has_ppe": has_ppe,
+            "mask_assessment": mask_assessment,
+            "not_assessable": not_assessable,
             "violation_type": violation_type,
             "confidence": round(float(person.get("confidence", 0.8)), 3),
             "compliance_score": compliance_score,

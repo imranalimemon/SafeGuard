@@ -24,6 +24,11 @@ class Violation(Base):
     bbox = Column(String, nullable=True)
     detections = Column(String, nullable=True)
     source = Column(String, nullable=True)
+    review_status = Column(String, nullable=False, default="open", server_default="open")
+    acknowledged_at = Column(DateTime, nullable=True)
+    escalated_at = Column(DateTime, nullable=True)
+    archived_at = Column(DateTime, nullable=True)
+    mask_assessment = Column(String, nullable=True)
 
 class AlertSettings(Base):
     __tablename__ = "alert_settings"

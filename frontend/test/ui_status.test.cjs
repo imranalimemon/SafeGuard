@@ -1,6 +1,7 @@
 // Isolated rendering checks: effects do not run, so no HTTP, camera, or alert calls.
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
 const Module = require('node:module');
 const esbuild = require('esbuild');
 const React = require('react');
@@ -16,6 +17,7 @@ const result = esbuild.buildSync({
       export { default as Violations } from './src/pages/ViolationsPage';
       export { default as Cameras } from './src/pages/CamerasPage';
       export { CameraCard } from './src/pages/CamerasPage';
+      export { ReviewState, ReviewActions } from './src/components/ViolationReview';
       export { default as Upload } from './src/pages/UploadPage';
       export { default as Settings } from './src/pages/SettingsPage';
     `,
@@ -79,3 +81,18 @@ html = renderToStaticMarkup(React.createElement(components.CameraCard, {
 assert.match(html, /role="alert"/);
 assert.match(html, /Device index 99 unavailable/);
 console.log('PASS: camera card displays the actual failed test message.');
+
+html = renderToStaticMarkup(React.createElement(components.ReviewState, { violation: {
+  review_status: 'escalated', acknowledged_at: '2026-10-27T12:00:00', escalated_at: '2026-10-27T12:01:00', archived_at: '2026-10-27T12:02:00', mask_assessment: 'not assessable',
+} }));
+assert.match(html, /escalated/); assert.match(html, /Acknowledged:/); assert.match(html, /Escalated:/); assert.match(html, /Archived:/); assert.match(html, /Mask: not assessable/);
+html = renderToStaticMarkup(React.createElement(components.ReviewActions, { violation: { id: 1 }, onAction: () => {} }));
+for (const label of ['Acknowledge', 'Escalate', 'Archive Evidence']) assert.ok(html.includes(label));
+html = renderToStaticMarkup(React.createElement(components.ReviewActions, { violation: { review_status: 'escalated', acknowledged_at: 'now', archived_at: 'now' }, onAction: () => {} }));
+assert.doesNotMatch(html, /<button/);
+for (const file of fs.readdirSync(path.join(root, 'src'), { recursive: true })) {
+  if (!/\.(jsx|js)$/.test(file)) continue;
+  const source = fs.readFileSync(path.join(root, 'src', file), 'utf8');
+  assert.doesNotMatch(source, /coming\s*soon|emergency.stop|\bPTZ\b/i, file);
+}
+console.log('PASS: review actions/timestamps render and unfinished UI controls are absent.');

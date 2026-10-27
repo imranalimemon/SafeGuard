@@ -8,6 +8,7 @@ export const getHealth = (config = {}) => client.get('/health', { timeout: 3000,
 export const getDashboardStats = () => client.get('/stats/dashboard');
 export const getViolations = (params) => client.get('/violations', { params });
 export const getViolationById = (id) => client.get(`/violations/${id}`);
+export const reviewViolation = (id, action) => client.patch(`/violations/${id}`, { action });
 export const uploadImage = (file) => {
   const formData = new FormData();
   formData.append('file', file);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAlertSettings, updateAlertSettings, sendTestEmail, sendTestWhatsApp } from '../api/client';
 import { useSystemHealth } from '../context/SystemHealth';
 
-const TABS = ['AI Thresholds', 'Alert Routing', 'User RBAC', 'System Logs'];
+const TABS = ['AI Thresholds'];
 
 const PPE_ITEMS = [
   { name: 'Safety Helmet',       key: 'Helmet',      icon: 'construction' },
@@ -295,7 +295,7 @@ const SettingsPage = () => {
                       <div>
                         <h4 className="font-data-label uppercase tracking-wider mb-1" style={{ color: '#FF6B00', fontSize: '11px' }}>PPE Requirements</h4>
                         <p className="font-data-label mb-4" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
-                          Helmet and vest are required by default. Masks are optional unless enabled in site configuration.
+                          Helmet, Safety Vest and Face Mask are required. Missing masks are assessed only on sufficiently large workers with visible frontal faces. Other faces are recorded as mask not assessable.
                         </p>
                         <div className="flex flex-col gap-2">
                           {PPE_ITEMS.map((ppe) => (
@@ -431,15 +431,6 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {activeTab !== 'AI Thresholds' && (
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-surface-container-highest)' }}>construction</span>
-              <p className="font-headline-sm" style={{ color: 'var(--color-on-surface-variant)' }}>{activeTab} — Coming Soon</p>
-              <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
-                This section will be configured via backend API.
-              </p>
-            </div>
-          )}
           </>}
         </div>
       </div>

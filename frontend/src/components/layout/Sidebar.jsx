@@ -82,17 +82,8 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer: Emergency Stop + Status */}
+      {/* Backend status */}
       <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--color-outline-variant)', paddingTop: '12px' }}>
-        <button
-          disabled
-          title="Emergency Stop — Coming soon"
-          className="w-full py-2 rounded flex items-center justify-center gap-2 font-data-label transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: '#FF2D55', color: '#fff', fontSize: '11px', letterSpacing: '0.08em', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>power_settings_new</span>
-          <span>EMERGENCY STOP<span className="block normal-case">Coming soon</span></span>
-        </button>
         <div
           className="mt-3 flex items-center gap-2 px-3 py-2 rounded"
           style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}

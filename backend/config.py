@@ -39,10 +39,11 @@ class Settings:
     PPE_CLASS_IDS: list = [0, 1, 3]
 
     # ── Violation rules ──
-    # Required PPE for every detected person. Configurable via .env.
-    # Helmet and vest are required by default. Opt in to masks by adding
-    # Face Mask to REQUIRED_PPE (e.g. Helmet,Safety Vest,Face Mask).
-    REQUIRED_PPE: list = [x.strip() for x in os.getenv("REQUIRED_PPE", "Helmet,Safety Vest").split(",") if x.strip()]
+    # Project policy: all three objectives are required. Legacy REQUIRED_PPE
+    # environment values no longer silently disable the mask objective.
+    REQUIRED_PPE: list = ["Helmet", "Safety Vest", "Face Mask"]
+    MASK_MIN_PERSON_WIDTH: int = 100
+    MASK_MIN_PERSON_HEIGHT: int = 160
 
     # Per-class IoU thresholds for PPE → person association. Smaller objects
     # (face masks) need a tighter threshold because their bounding boxes are

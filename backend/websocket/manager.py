@@ -118,6 +118,7 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
                 bbox=json.dumps([int(x) for x in v["person_bbox"]]),
                 detections=full_detections_json,
                 source=source,
+                mask_assessment=v.get("mask_assessment"),
             )
             db.add(row)
             db.commit()
@@ -148,18 +149,22 @@ def _stream_packet(camera, frame, result):
         raise RuntimeError("Cannot encode camera frame")
     total = len(violations)
     violating = sum(v["status"] == "VIOLATION" for v in violations)
+    compliant = sum(v["status"] == "COMPLIANT" for v in violations)
+    assessed = compliant + violating
     return {
         "camera_id": camera.id,
         "camera_name": camera.name,
         "frame": base64.b64encode(buffer).decode("utf-8"),
         "detections": _serialize_detections(detections),
+        "workers": violations,
         "violations": [
             {"person_bbox": v["person_bbox"], "missing_ppe": v["missing_ppe"], "status": v["status"]}
             for v in violations if v["status"] == "VIOLATION"
         ],
         "stats": {
-            "persons": total, "compliant": total - violating, "violations": violating,
-            "compliance_rate": round((total - violating) / total * 100, 1) if total else None,
+            "persons": total, "compliant": compliant, "violations": violating,
+            "mask_not_assessable": sum(v.get("mask_assessment") == "not assessable" for v in violations),
+            "compliance_rate": round(compliant / assessed * 100, 1) if assessed else None,
         } if result is not None else None,
     }
 
@@ -199,7 +204,7 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
 
         def analyze(frame):
             detections = det.detect(frame)
-            return detections, compute_violations(detections)
+            return detections, compute_violations(detections, frame=frame)
 
         async def record(frame, result):
             detections, violations = result

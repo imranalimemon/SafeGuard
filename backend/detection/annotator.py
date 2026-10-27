@@ -88,6 +88,10 @@ def annotate_frame(frame: np.ndarray, detections: List[Dict], violations: List[D
             box_color = settings.COMPLIANT_COLOR
             label = "COMPLIANT"
             text_color = (0, 0, 0)
+        elif v["status"] == "NOT_ASSESSABLE":
+            box_color = (0, 191, 255)
+            label = "Mask not assessable"
+            text_color = (0, 0, 0)
         else:
             box_color = settings.VIOLATION_COLOR
             missing = v.get("missing_ppe", [])
