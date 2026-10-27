@@ -79,16 +79,20 @@ const IncidentItem = ({ type, camera, confidence, time, severity = 'critical', r
       {!resolved && severity === 'critical' && (
         <div className="flex gap-2">
           <button
-            className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors"
+            disabled
+            title="Acknowledge — Coming soon"
+            className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontSize: '10px', background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
           >
-            Acknowledge
+            Acknowledge — Coming soon
           </button>
           <button
-            className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors"
+            disabled
+            title="Escalate — Coming soon"
+            className="font-data-label uppercase tracking-wider px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontSize: '10px', background: 'transparent', border: '1px solid rgba(255,45,85,0.4)', color: '#FF2D55' }}
           >
-            Escalate
+            Escalate — Coming soon
           </button>
         </div>
       )}
@@ -151,10 +155,11 @@ const CamTile = ({ id, label, active = false, offline = false, frame = null, isS
             className="absolute bottom-3 right-3 glass-panel rounded p-1.5 flex gap-1.5 z-30 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
           >
             {['zoom_in', 'zoom_out', 'crop_free'].map((icon) => (
-              <button key={icon} className="p-1 rounded transition-colors hover:bg-white/10" style={{ color: '#fff' }}>
+              <button key={icon} disabled title="PTZ — Coming soon" aria-label={`${icon} — Coming soon`} className="p-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: '#fff' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{icon}</span>
               </button>
             ))}
+            <span className="font-data-label text-white" style={{ fontSize: '10px' }}>Coming soon</span>
           </div>
         </>
       )}
@@ -356,10 +361,11 @@ const DashboardPage = () => {
           {/* PTZ hover controls */}
           <div className="absolute bottom-3 right-3 glass-panel rounded p-1.5 flex gap-1.5 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
             {['zoom_in', 'zoom_out', 'crop_free'].map((icon) => (
-              <button key={icon} className="p-1 rounded hover:bg-white/10 transition-colors" style={{ color: '#fff' }}>
+              <button key={icon} disabled title="PTZ — Coming soon" aria-label={`${icon} — Coming soon`} className="p-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: '#fff' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{icon}</span>
               </button>
             ))}
+            <span className="font-data-label text-white" style={{ fontSize: '10px' }}>Coming soon</span>
           </div>
         </div>
 

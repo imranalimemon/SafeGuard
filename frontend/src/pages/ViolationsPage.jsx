@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getViolations, clearViolations, shareViolationWhatsApp, getAlertSettings } from '../api/client';
+import { getViolations, shareViolationWhatsApp, getAlertSettings } from '../api/client';
 
 const VIOLATION_TYPES = ['All Types', 'Missing Helmet', 'No High-Vis Vest', 'Unauthorized Zone', 'Missing PPE', 'Camera Obscured'];
 const LOCATIONS = ['Sector 7G', 'Loading Bay A', 'Loading Bay B', 'Main Gate', 'Forge Area'];
@@ -241,10 +241,11 @@ const ViolationModal = ({ violation, onClose }) => {
             {/* Zoom controls overlay */}
             <div className="absolute bottom-5 left-1/2 -translate-x-1/2 glass-panel rounded-full px-4 py-2 flex gap-3 items-center">
               {['zoom_in', 'zoom_out', 'file_download'].map((icon) => (
-                <button key={icon} className="hover:text-orange-400 transition-colors" style={{ color: '#fff' }}>
+                <button key={icon} disabled title="Evidence controls — Coming soon" aria-label={`${icon} — Coming soon`} className="transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: '#fff' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{icon}</span>
                 </button>
               ))}
+              <span className="font-data-label text-white" style={{ fontSize: '10px' }}>Coming soon</span>
             </div>
           </div>
 
@@ -281,16 +282,18 @@ const ViolationModal = ({ violation, onClose }) => {
               <div className="font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>ACTIONS</div>
               <div className="flex flex-col gap-2">
                 <button
-                  className="w-full py-2 rounded font-data-value transition-colors"
+                  disabled
+                  className="w-full py-2 rounded font-data-value transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)', color: 'var(--color-on-surface)', fontSize: '12px' }}
                 >
-                  Mark False Positive
+                  Mark False Positive — Coming soon
                 </button>
                 <button
-                  className="w-full py-2 rounded font-data-value font-bold transition-opacity hover:opacity-90"
+                  disabled
+                  className="w-full py-2 rounded font-data-value font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: '#FF6B00', color: '#000', fontSize: '12px' }}
                 >
-                  Export to Incident Report
+                  Export to Incident Report — Coming soon
                 </button>
               </div>
             </div>
@@ -470,18 +473,20 @@ const ViolationsPage = () => {
                 { icon: 'delete', label: 'Archive Evidence' },
                 { icon: 'download', label: 'Export CSV' },
               ].map(({ icon, label }) => (
-                <button key={label} className="flex items-center gap-2 px-4 py-2 rounded font-body-sm transition-colors hover:text-on-surface" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', background: 'transparent', fontSize: '13px' }}>
+                <button key={label} disabled title={`${label} — Coming soon`} className="flex items-center gap-2 px-4 py-2 rounded font-body-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-on-surface-variant)', background: 'transparent', fontSize: '13px' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>{icon}</span>
-                  {label}
+                  {label} — Coming soon
                 </button>
               ))}
               <button
-                onClick={() => { if (window.confirm('Clear all violations?')) clearViolations().then(fetchViolations); }}
-                className="flex items-center gap-2 px-4 py-2 rounded font-body-sm font-bold transition-opacity hover:opacity-90"
+                disabled
+                title="Export PDF Report — Coming soon"
+                aria-label="Export PDF Report — Coming soon"
+                className="flex items-center gap-2 px-4 py-2 rounded font-body-sm font-bold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: '#FF6B00', color: '#000', fontSize: '13px' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>picture_as_pdf</span>
-                Export PDF Report
+                Coming soon
               </button>
             </div>
           </div>

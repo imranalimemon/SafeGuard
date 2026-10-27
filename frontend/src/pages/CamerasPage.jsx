@@ -152,7 +152,7 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
 
 /* ── Detail / Config Panel ───────────────────────────────── */
 const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, formError, editing }) => {
-  const [ptzEnabled, setPtzEnabled] = useState(form.ptz_enabled ?? false);
+  const ptzEnabled = form.ptz_enabled ?? false;
 
   return (
     <div className="w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline-variant)' }}>
@@ -241,10 +241,12 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
           <div className="flex justify-between items-center pb-2 mb-3" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
             <h3 className="font-data-label uppercase tracking-wider" style={{ color: '#FF6B00', fontSize: '11px' }}>PTZ Control</h3>
             <div className="flex items-center gap-2">
-              <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{ptzEnabled ? 'ENABLED' : 'DISABLED'}</span>
+              <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Coming soon</span>
               <button
-                onClick={() => setPtzEnabled(!ptzEnabled)}
-                className="w-8 h-4 rounded-full relative transition-colors"
+                disabled
+                title="PTZ — Coming soon"
+                aria-label="PTZ — Coming soon"
+                className="w-8 h-4 rounded-full relative transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: ptzEnabled ? '#FF6B00' : 'var(--color-surface-container-high)' }}
               >
                 <div className="w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all" style={{ left: ptzEnabled ? '18px' : '2px' }} />
@@ -263,7 +265,7 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
                     { icon: 'keyboard_arrow_left',  style: { left: '6px', top: '50%', transform: 'translateY(-50%)' } },
                     { icon: 'keyboard_arrow_right', style: { right: '6px', top: '50%', transform: 'translateY(-50%)' } },
                   ].map(({ icon, style }) => (
-                    <button key={icon} className="absolute p-0 transition-colors hover:text-orange-500" style={{ color: 'var(--color-on-surface-variant)', ...style }}>
+                    <button key={icon} disabled title="PTZ — Coming soon" aria-label={`${icon} — Coming soon`} className="absolute p-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: 'var(--color-on-surface-variant)', ...style }}>
                       <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>{icon}</span>
                     </button>
                   ))}
@@ -275,7 +277,7 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
               {/* Zoom */}
               <div className="flex items-center gap-3 mt-3">
                 <span className="material-symbols-outlined" style={{ color: 'var(--color-on-surface-variant)', fontSize: '16px' }}>zoom_out</span>
-                <input type="range" min="1" max="10" defaultValue="1" className="flex-1" style={{ accentColor: '#FF6B00' }} />
+                <input type="range" min="1" max="10" defaultValue="1" disabled title="PTZ zoom — Coming soon" aria-label="PTZ zoom — Coming soon" className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#FF6B00' }} />
                 <span className="material-symbols-outlined" style={{ color: 'var(--color-on-surface-variant)', fontSize: '16px' }}>zoom_in</span>
               </div>
             </>
