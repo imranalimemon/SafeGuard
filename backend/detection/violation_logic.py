@@ -1,21 +1,19 @@
 """
-SafeGuard AI — Production-Grade PPE Violation & Compliance Engine
+SafeGuard AI — PPE Violation & Compliance Engine
 
 Architectural Design:
 1. Canonical Normalization: Maps variations ('hardhat', 'safety helmet', 'vest', 'mask')
    to standard classes: 'Helmet', 'Safety Vest', 'Face Mask'.
 2. Anatomical Zoning: Restricts PPE association to physiologically realistic regions
-   (e.g., Helmet on head [top 35%], Vest on torso [15%-85%]).
+   (e.g., Helmet on head [top 35%], Vest on torso [15%-70%]).
 3. Bipartite Mutual Exclusion: Scores every (person, PPE) pair and assigns each PPE
    item to the single best-matching person. No two workers can claim the same helmet.
-4. Worker Synthesis: If YOLO detects a Helmet or Safety Vest without a 'Person' box
-   (due to occlusion, close-up crop, or low detection confidence), an inferred worker
-   envelope is synthesized so compliance is still accurately tracked.
+4. Detected Workers Only: Unclaimed PPE cannot create a worker or a violation.
 5. Deterministic Violation Output: Explicitly guarantees 'missing_ppe', 'has_ppe',
    'status', and formatted 'violation_type'.
 """
 
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from config import settings
 
 
@@ -94,12 +92,12 @@ def get_anatomical_zone(person_box: List[int], ppe_type: str) -> List[int]:
             int(py1 + 0.40 * ph),
         ]
     elif ppe_type == "Safety Vest":
-        # Torso zone: from top 15% to 85% of body
+        # Torso zone: from top 15% to 70% of body, excluding the lower legs.
         return [
             int(px1 - 0.15 * pw),
             int(py1 + 0.15 * ph),
             int(px2 + 0.15 * pw),
-            int(py1 + 0.85 * ph),
+            int(py1 + 0.70 * ph),
         ]
     return person_box
 
@@ -114,8 +112,10 @@ def calculate_association_score(person_box: List[int], ppe_box: List[int], ppe_t
     zone = get_anatomical_zone(person_box, ppe_type)
     zone_containment = compute_containment(ppe_box, zone)
 
-    # Reject if PPE does not intersect with the anatomical zone or person
-    if zone_containment < 0.20 and full_containment < 0.30:
+    # Body containment alone does not show that equipment is worn. Require
+    # most of the item to overlap its anatomical zone, with its center there.
+    ppe_cy = (ppe_box[1] + ppe_box[3]) / 2.0
+    if zone_containment < 0.50 or not zone[1] <= ppe_cy <= zone[3]:
         return 0.0
 
     # 3. Horizontal centroid alignment (a vest or helmet should align with the body axis)
@@ -134,110 +134,10 @@ def calculate_association_score(person_box: List[int], ppe_box: List[int], ppe_t
     return score
 
 
-def synthesize_workers_from_unclaimed_ppe(unclaimed_ppes: List[Dict], existing_persons: List[Dict]) -> List[Dict]:
-    """When YOLO detects Helmet or Safety Vest but missed the Person box (e.g. occluded,
-    sitting, close-up), synthesize an inferred worker bounding box."""
-    synthesized = []
-    helmets = [p for p in unclaimed_ppes if normalize_ppe_name(p["class_name"]) == "Helmet"]
-    vests = [p for p in unclaimed_ppes if normalize_ppe_name(p["class_name"]) == "Safety Vest"]
-    used_vests = set()
-
-    # Match nearby helmet and vest into one inferred worker
-    for h in helmets:
-        hx1, hy1, hx2, hy2 = h["bbox"]
-        hcx = (hx1 + hx2) / 2.0
-        hw = hx2 - hx1
-        hh = hy2 - hy1
-
-        matched_vest = None
-        for i, v in enumerate(vests):
-            if i in used_vests:
-                continue
-            vx1, vy1, vx2, vy2 = v["bbox"]
-            vcx = (vx1 + vx2) / 2.0
-            vw = vx2 - vx1
-            if abs(hcx - vcx) <= max(hw, vw) * 1.2 and vy1 >= hy1 - 10:
-                matched_vest = (i, v)
-                break
-
-        if matched_vest:
-            used_vests.add(matched_vest[0])
-            v = matched_vest[1]
-            vx1, vy1, vx2, vy2 = v["bbox"]
-            px1 = min(hx1, vx1)
-            py1 = hy1
-            px2 = max(hx2, vx2)
-            py2 = int(vy2 + (vy2 - vy1) * 0.8)
-            synthesized.append({
-                "bbox": [max(0, px1), max(0, py1), px2, py2],
-                "confidence": round((h["confidence"] + v["confidence"]) / 2.0, 3),
-                "class_id": settings.PERSON_CLASS_ID,
-                "class_name": "Person",
-                "inferred": True,
-            })
-        else:
-            # Standalone helmet without detected person
-            px1 = int(hx1 - 0.6 * hw)
-            py1 = hy1
-            px2 = int(hx2 + 0.6 * hw)
-            py2 = int(hy1 + 5.5 * hh)
-            synthesized.append({
-                "bbox": [max(0, px1), max(0, py1), px2, py2],
-                "confidence": h["confidence"],
-                "class_id": settings.PERSON_CLASS_ID,
-                "class_name": "Person",
-                "inferred": True,
-            })
-
-    # Standalone vests without helmet and without detected person
-    for i, v in enumerate(vests):
-        if i not in used_vests:
-            vx1, vy1, vx2, vy2 = v["bbox"]
-            vw = vx2 - vx1
-            vh = vy2 - vy1
-            px1 = int(vx1 - 0.15 * vw)
-            py1 = max(0, int(vy1 - 0.45 * vh))
-            px2 = int(vx2 + 0.15 * vw)
-            py2 = int(vy2 + 1.0 * vh)
-            synthesized.append({
-                "bbox": [max(0, px1), py1, px2, py2],
-                "confidence": v["confidence"],
-                "class_id": settings.PERSON_CLASS_ID,
-                "class_name": "Person",
-                "inferred": True,
-            })
-
-    # Standalone masks without detected person or helmet
-    masks = [p for p in unclaimed_ppes if normalize_ppe_name(p["class_name"]) == "Face Mask"]
-    for m in masks:
-        mx1, my1, mx2, my2 = m["bbox"]
-        mw = mx2 - mx1
-        mh = my2 - my1
-        already_covered = any(
-            (s["bbox"][0] <= (mx1 + mx2) / 2.0 <= s["bbox"][2])
-            and (s["bbox"][1] <= (my1 + my2) / 2.0 <= s["bbox"][3])
-            for s in synthesized
-        )
-        if not already_covered:
-            px1 = int(mx1 - 0.5 * mw)
-            py1 = max(0, int(my1 - 0.3 * mh))
-            px2 = int(mx2 + 0.5 * mw)
-            py2 = int(my1 + 6.0 * mh)
-            synthesized.append({
-                "bbox": [max(0, px1), py1, px2, py2],
-                "confidence": m["confidence"],
-                "class_id": settings.PERSON_CLASS_ID,
-                "class_name": "Person",
-                "inferred": True,
-            })
-
-    return synthesized
-
-
 def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]] = None) -> List[Dict]:
-    """Production-grade violation and PPE compliance analysis.
+    """Analyze PPE compliance for detected persons only.
 
-    Returns a list of dictionaries for each detected/inferred person:
+    Returns a list of dictionaries for each detected person:
     {
         "person_bbox": [x1, y1, x2, y2],
         "status": "COMPLIANT" | "VIOLATION",
@@ -298,26 +198,7 @@ def compute_violations(detections: List[Dict], required_ppe: Optional[List[str]]
             assigned_ppe_types_per_person[p_idx].add(ppe_type)
             person_ppe_map[p_idx].append(ppe)
 
-    # Step 2: Handle Unclaimed PPE (Synthesize Workers if Person Detection was missed)
-    unclaimed = [ppe for idx, ppe in enumerate(filtered_ppes) if idx not in assigned_ppes]
-    if unclaimed:
-        synthesized_workers = synthesize_workers_from_unclaimed_ppe(unclaimed, persons)
-        for s_worker in synthesized_workers:
-            s_idx = len(persons)
-            persons.append(s_worker)
-            person_ppe_map[s_idx] = []
-            assigned_ppe_types_per_person[s_idx] = set()
-
-            # Associate the unclaimed PPEs to the synthesized worker
-            for ppe in unclaimed:
-                ppe_type = ppe["canonical_name"]
-                if ppe_type not in assigned_ppe_types_per_person[s_idx]:
-                    sc = calculate_association_score(s_worker["bbox"], ppe["bbox"], ppe_type)
-                    if sc > 0.0:
-                        assigned_ppe_types_per_person[s_idx].add(ppe_type)
-                        person_ppe_map[s_idx].append(ppe)
-
-    # Step 3: Compute Compliance and Missing Elements for each Person
+    # Step 2: Ignore unclaimed PPE; compute compliance only for real detections.
     results = []
     for p_idx, person in enumerate(persons):
         matched_ppes = person_ppe_map.get(p_idx, [])

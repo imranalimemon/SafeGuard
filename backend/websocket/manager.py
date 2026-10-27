@@ -121,7 +121,7 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
             if v["status"] != "VIOLATION":
                 continue
             source = f"camera:{camera.id}"
-            if not deduplicator.should_log(source, v["missing_ppe"]):
+            if not deduplicator.should_log(source, v["missing_ppe"], person_bbox=v["person_bbox"]):
                 continue
 
             # Save the annotated screenshot on the first real violation in this frame

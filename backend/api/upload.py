@@ -81,13 +81,13 @@ async def upload_image(
 
     full_detections_json = json.dumps(_serialize_detections(detections))
 
-    # Log violations to database (deduplicated per source+missing_ppe)
+    # Log violations per worker position, source, and missing PPE.
     suppressed_count = 0
     for v in violations:
         if v["status"] != "VIOLATION":
             continue
 
-        if not deduplicator.should_log("image_upload", v["missing_ppe"]):
+        if not deduplicator.should_log("image_upload", v["missing_ppe"], person_bbox=v["person_bbox"]):
             suppressed_count += 1
             continue
 
@@ -192,10 +192,9 @@ async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
             recorded_any = False
             for v in violating:
-                # Cooldown key: (source, missing_ppe). Frame index is NOT part of
-                # the key so a sustained violation across many sampled frames
-                # only logs once per cooldown window.
-                if not deduplicator.should_log("video_upload", v["missing_ppe"]):
+                # Include worker position, not frame index, so different workers
+                # log independently while a stationary worker is throttled.
+                if not deduplicator.should_log("video_upload", v["missing_ppe"], person_bbox=v["person_bbox"]):
                     total_suppressed += 1
                     continue
 
