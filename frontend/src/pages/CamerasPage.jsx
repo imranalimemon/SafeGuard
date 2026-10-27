@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemHealth } from '../context/SystemHealth';
+import { cameraTestResult } from '../api/liveStream';
 import {
   listCameras, createCamera, updateCamera, deleteCamera, testCamera, scanCameras,
   autoDetectCameras,
@@ -72,7 +73,7 @@ const SelectInput = ({ value, onChange, options }) => (
 );
 
 /* ── Camera Card ─────────────────────────────────────────── */
-const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus, onTest }) => {
+export const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus, onTest }) => {
   const online = camera.enabled;
   const stripeColor = online ? (isSelected ? '#FF6B00' : 'var(--color-slate-gray)') : '#FF2D55';
 
@@ -121,6 +122,12 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
           </div>
         )}
       </div>
+
+      {testStatus?.message && (
+        <p role={testStatus.ok ? 'status' : 'alert'} className="font-data-label" style={{ color: testStatus.ok ? '#10B981' : '#FF2D55', fontSize: '11px' }}>
+          {testStatus.message}
+        </p>
+      )}
 
       {/* Actions row */}
       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -620,9 +627,9 @@ const CamerasPage = () => {
     setTestStatus((s) => ({ ...s, [id]: { loading: true } }));
     try {
       const res = await testCamera(id);
-      setTestStatus((s) => ({ ...s, [id]: { ok: res.data?.ok === true, message: res.data?.message } }));
+      setTestStatus((s) => ({ ...s, [id]: cameraTestResult(res.data) }));
     } catch (err) {
-      setTestStatus((s) => ({ ...s, [id]: { ok: false, message: err?.response?.data?.detail } }));
+      setTestStatus((s) => ({ ...s, [id]: { ok: false, message: err?.response?.data?.detail || err?.message || 'Camera test failed.' } }));
     }
   };
 

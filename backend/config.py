@@ -25,6 +25,8 @@ class Settings:
     MODEL_PATH: str = os.getenv("MODEL_PATH", "best.onnx")
     CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
     IOU_THRESHOLD: float = float(os.getenv("IOU_THRESHOLD", "0.45"))
+    # Inference sampling only; does not change detector thresholds or PPE rules.
+    STREAM_DETECTION_INTERVAL: int = max(1, int(os.getenv("STREAM_DETECTION_INTERVAL", "3")))
     VIOLATION_IOU_THRESHOLD: float = float(os.getenv("VIOLATION_IOU_THRESHOLD", "0.3"))
     NUM_CLASSES: int = int(os.getenv("NUM_CLASSES", "4"))
     CLASS_NAMES: dict = {

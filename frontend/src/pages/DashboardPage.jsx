@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getDashboardStats, listCameras } from '../api/client';
 import { useSystemHealth } from '../context/SystemHealth';
+import { createLiveStream } from '../api/liveStream';
 
 const SELECTED_CAMERA_KEY = 'sg_selected_camera';
 
@@ -94,6 +95,7 @@ const DashboardPage = () => {
   const health = useSystemHealth();
   const [isStreaming, setIsStreaming] = useState(false);
   const [frame, setFrame] = useState(null);
+  const [frameKey, setFrameKey] = useState(null);
   const [liveStats, setLiveStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [statsError, setStatsError] = useState(null);
@@ -103,10 +105,20 @@ const DashboardPage = () => {
   const [selectedCameraId, setSelectedCameraId] = useState(
     () => localStorage.getItem(SELECTED_CAMERA_KEY) || null
   );
-  const wsRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
-  const frameTimeoutRef = useRef(null);
-  const intentionallyStoppedRef = useRef(false);
+  const streamRef = useRef(null);
+  if (!streamRef.current) {
+    streamRef.current = createLiveStream({
+      openSocket: (cameraId) => {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        return new WebSocket(`${protocol}//${window.location.host}/ws/stream/${cameraId}`);
+      },
+      onState: (state) => {
+        setIsStreaming(state.isStreaming); setFrame(state.frame);
+        setFrameKey(state.frameKey ?? null);
+        setLiveStats(state.stats); setStreamError(state.error);
+      },
+    });
+  }
 
   /* ── fetch ─────────────────────────── */
   const fetchStats = async () => {
@@ -136,59 +148,15 @@ const DashboardPage = () => {
   };
 
   /* ── stream ─────────────────────────── */
-  const startStream = (cameraId = selectedCameraId) => {
-    if (!wsRef.current && cameraId) {
-      intentionallyStoppedRef.current = false;
-      setStreamError(null);
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const socket = new WebSocket(`${protocol}//${window.location.host}/ws/stream/${cameraId}`);
-      wsRef.current = socket;
-      socket.onmessage = (event) => {
-        if (wsRef.current !== socket) return;
-        try {
-          const data = JSON.parse(event.data);
-          if (data.error) { setStreamError(data.error); setLiveStats(null); setFrame(null); }
-          if (data.frame) {
-            setFrame(`data:image/jpeg;base64,${data.frame}`);
-            setLiveStats(data.stats ?? null);
-            setStreamError(null);
-            clearTimeout(frameTimeoutRef.current);
-            frameTimeoutRef.current = setTimeout(() => {
-              setFrame(null); setLiveStats(null); setStreamError('No recent camera frames.');
-            }, 5000);
-          }
-        } catch { setStreamError('Invalid camera response.'); setLiveStats(null); }
-      };
-      socket.onclose = () => {
-        if (wsRef.current !== socket) return;
-        wsRef.current = null;
-        setFrame(null); setLiveStats(null); setIsStreaming(false);
-        clearTimeout(frameTimeoutRef.current);
-        if (!intentionallyStoppedRef.current) {
-          setStreamError('Camera disconnected. Reconnecting…');
-          reconnectTimeoutRef.current = setTimeout(() => startStream(cameraId), 3000);
-        }
-      };
-      setIsStreaming(true);
-    }
-  };
-
-  const stopStream = () => {
-    intentionallyStoppedRef.current = true;
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-    clearTimeout(frameTimeoutRef.current);
-    if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
-    setIsStreaming(false);
-    setFrame(null);
-    setLiveStats(null);
-    setStreamError(null);
-  };
+  const startStream = (cameraId = selectedCameraId) => streamRef.current.start(cameraId);
+  const stopStream = () => streamRef.current.stop();
 
   const handleCameraChange = (e) => {
     const id = e.target.value || null;
     setSelectedCameraId(id);
     if (id) localStorage.setItem(SELECTED_CAMERA_KEY, id);
-    if (isStreaming) { stopStream(); if (id) startStream(id); }
+    stopStream();
+    if (id && health.state === 'online') startStream(id);
   };
 
   useEffect(() => {
@@ -201,12 +169,7 @@ const DashboardPage = () => {
     return () => clearInterval(timer);
   }, [health.reachable]);
 
-  useEffect(() => () => {
-    intentionallyStoppedRef.current = true;
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-    clearTimeout(frameTimeoutRef.current);
-    if (wsRef.current) wsRef.current.close();
-  }, []);
+  useEffect(() => () => streamRef.current.stop(), []);
 
   /* ── recent violations → incident log ─ */
   const history = health.reachable ? stats : null;
@@ -226,7 +189,7 @@ const DashboardPage = () => {
         <div className="relative flex-1 rounded overflow-hidden group" style={{ border: `1px solid #FF6B00`, background: 'var(--color-surface)', minHeight: 0 }}>
           <div className="absolute inset-0 scanline z-10 pointer-events-none" />
           {isStreaming && frame ? (
-            <img src={frame} alt="Live feed" className="absolute inset-0 w-full h-full object-contain" />
+            <img key={frameKey} src={frame} onLoad={() => streamRef.current.displayed(frameKey)} onError={() => streamRef.current.imageError(frameKey)} alt="Live feed" className="absolute inset-0 w-full h-full object-contain" />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: 'rgba(248,250,252,0.92)' }}>
               <span className="material-symbols-outlined mb-3" style={{ color: 'var(--color-on-surface-variant)', fontSize: '40px' }}>videocam_off</span>

@@ -1,23 +1,4 @@
-"""
-SafeGuard AI — WebSocket Live Stream Manager.
-
-Phase 2 Slice 2 — multi-camera support.
-
-The capture/detect/broadcast loop is now parameterised on a `camera_id` path
-param. A producer pulls frames from `cv2.VideoCapture(camera.url)` (or the
-local webcam index for `source_type == "webcam"`), runs detection, and
-broadcasts the annotated JPEG-base64 frame to all connected WS clients.
-
-Inference (`session.run`) is synchronous and CPU-blocking. We offload it and
-`cv2.imencode` to a thread executor so the asyncio loop stays free for
-broadcast and other clients. With one camera this is invisible; with N
-cameras it prevents one slow frame from stalling all others.
-
-Violations produced by the live stream are written to the `violations` table
-with `source = f"camera:{camera.id}"`. The existing `ViolationDeduplicator`
-already keys on `source`, so each camera gets its own cooldown bucket
-automatically — no changes needed there.
-"""
+"""Camera WebSockets: latest-frame capture, sampled inference and annotated JPEGs."""
 import asyncio
 import base64
 import json
@@ -37,6 +18,7 @@ from detection.annotator import annotate_frame
 from detection.deduplicator import deduplicator
 from detection.model import get_detector
 from detection.violation_logic import compute_violations
+from .live import LatestFrameStream, send_latest
 
 router = APIRouter()
 
@@ -158,19 +140,47 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
     return written, pending_alerts
 
 
+def _stream_packet(camera, frame, result):
+    detections, violations = result if result is not None else ([], [])
+    annotated = annotate_frame(frame.copy(), detections, violations)
+    ok, buffer = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    if not ok:
+        raise RuntimeError("Cannot encode camera frame")
+    total = len(violations)
+    violating = sum(v["status"] == "VIOLATION" for v in violations)
+    return {
+        "camera_id": camera.id,
+        "camera_name": camera.name,
+        "frame": base64.b64encode(buffer).decode("utf-8"),
+        "detections": _serialize_detections(detections),
+        "violations": [
+            {"person_bbox": v["person_bbox"], "missing_ppe": v["missing_ppe"], "status": v["status"]}
+            for v in violations if v["status"] == "VIOLATION"
+        ],
+        "stats": {
+            "persons": total, "compliant": total - violating, "violations": violating,
+            "compliance_rate": round((total - violating) / total * 100, 1) if total else None,
+        } if result is not None else None,
+    }
+
+
+def _dispatch_alerts(pending_alerts):
+    # Existing alert transports can block; keep them off the stream event loop.
+    async def dispatch():
+        for vdata in pending_alerts:
+            try:
+                path = vdata.get("screenshot_disk_path") or vdata.get("screenshot_path")
+                await trigger_alerts(vdata, screenshot_path=path)
+            except Exception as exc:
+                print(f"[WS] alert trigger failed: {exc}")
+    asyncio.run(dispatch())
+
+
 @router.websocket("/ws/stream/{camera_id}")
 async def websocket_endpoint(websocket: WebSocket, camera_id: int):
-    """WebSocket endpoint for real-time video stream with PPE detection.
-
-    Phase 2: parameterised on `camera_id`. Look up the camera, open its
-    capture, broadcast annotated frames, persist violations.
-    """
+    """Stream latest frames, reusing sampled inference between detections."""
     await manager.connect(websocket)
-    det = get_detector()
-    cap = None
-    camera: Camera | None = None
-    loop = asyncio.get_event_loop()
-
+    stream = None
     try:
         db = SessionLocal()
         try:
@@ -180,97 +190,42 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
         if camera is None:
             await websocket.send_json({"error": f"Camera {camera_id} not found"})
             await websocket.close(code=4404)
-            manager.disconnect(websocket)
             return
         if not camera.enabled:
             await websocket.send_json({"error": f"Camera '{camera.name}' is disabled"})
             await websocket.close(code=4403)
-            manager.disconnect(websocket)
             return
+        det = await asyncio.to_thread(get_detector)
 
-        cap = await loop.run_in_executor(None, _build_capture, camera)
-        is_open = await loop.run_in_executor(None, cap.isOpened)
-        if not is_open:
-            await websocket.send_json({"error": f"Cannot open capture for camera '{camera.name}'"})
-            await websocket.close(code=4400)
-            manager.disconnect(websocket)
-            return
+        def analyze(frame):
+            detections = det.detect(frame)
+            return detections, compute_violations(detections)
 
-        while True:
-            ret, frame = await loop.run_in_executor(None, cap.read)
-            if not ret:
-                await asyncio.sleep(0.1)
-                continue
-
-            # Inference is CPU-blocking — keep the event loop free.
-            detections = await loop.run_in_executor(None, det.detect, frame)
-            violations = compute_violations(detections)
-
-            # Persist violations off-loop (uses its own SessionLocal).
+        async def record(frame, result):
+            detections, violations = result
             if violations:
-                written, pending_alerts = await loop.run_in_executor(
-                    None, _write_violations, camera, frame, detections, violations
+                _, pending = await asyncio.to_thread(
+                    _write_violations, camera, frame, detections, violations
                 )
-                # Dispatch email/WhatsApp alerts from the async context
-                # so `trigger_alerts` (which is async) actually executes.
-                for vdata in pending_alerts:
-                    try:
-                        ss_path = vdata.get("screenshot_disk_path") or vdata.get("screenshot_path")
-                        await trigger_alerts(vdata, screenshot_path=ss_path)
-                    except Exception as e:
-                        print(f"[WS] alert trigger failed: {e}")
+                if pending:
+                    await asyncio.to_thread(_dispatch_alerts, pending)
 
-            annotated = annotate_frame(frame.copy(), detections, violations)
-
-            # JPEG encode off-loop too (cv2.imencode is sync).
-            def _encode(img):
-                _, buffer = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                return base64.b64encode(buffer).decode("utf-8")
-
-            frame_base64 = await loop.run_in_executor(None, _encode, annotated)
-
-            total_persons = len(violations)
-            violating = sum(1 for v in violations if v["status"] == "VIOLATION")
-            compliant = max(0, total_persons - violating)
-            compliance_rate = (compliant / total_persons * 100) if total_persons > 0 else None
-
-            data = {
-                "camera_id": camera.id,
-                "camera_name": camera.name,
-                "frame": frame_base64,
-                "detections": [
-                    {
-                        "class_id": d["class_id"],
-                        "class_name": d["class_name"],
-                        "confidence": round(d["confidence"], 3),
-                        "bbox": d["bbox"],
-                    }
-                    for d in detections
-                ],
-                "violations": [
-                    {
-                        "person_bbox": v["person_bbox"],
-                        "missing_ppe": v["missing_ppe"],
-                        "status": v["status"],
-                    }
-                    for v in violations
-                    if v["status"] == "VIOLATION"
-                ],
-                "stats": {
-                    "persons": total_persons,
-                    "compliant": compliant,
-                    "violations": violating,
-                    "compliance_rate": round(compliance_rate, 1) if compliance_rate is not None else None,
-                },
-            }
-            await websocket.send_json(data)
-            await asyncio.sleep(0.033)  # ~30 FPS cap
-
+        stream = LatestFrameStream(
+            lambda: _build_capture(camera), analyze,
+            interval=settings.STREAM_DETECTION_INTERVAL, on_result=record,
+        ).start()
+        await send_latest(websocket, stream, lambda frame, result: _stream_packet(camera, frame, result))
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-        manager.disconnect(websocket)
+        pass
+    except Exception as exc:
+        print(f"[WS] {exc}")
+        try:
+            message = str(exc) or "Camera not available: stream timed out"
+            await websocket.send_json({"error": message})
+            await websocket.close(code=4400)
+        except Exception:
+            pass  # Socket may already have disconnected.
     finally:
-        if cap is not None:
-            cap.release()
+        manager.disconnect(websocket)
+        if stream is not None:
+            await stream.close()

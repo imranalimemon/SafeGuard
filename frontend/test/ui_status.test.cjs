@@ -15,6 +15,7 @@ const result = esbuild.buildSync({
       export { default as Footer } from './src/components/layout/Footer';
       export { default as Violations } from './src/pages/ViolationsPage';
       export { default as Cameras } from './src/pages/CamerasPage';
+      export { CameraCard } from './src/pages/CamerasPage';
       export { default as Upload } from './src/pages/UploadPage';
       export { default as Settings } from './src/pages/SettingsPage';
     `,
@@ -70,3 +71,11 @@ html = render('Settings', offline);
 assert.match(html, /Configuration not available/);
 assert.doesNotMatch(html, /safety@company\.com|58%/);
 console.log('PASS: fake location filters and unsupported model/class choices are absent.');
+
+html = renderToStaticMarkup(React.createElement(components.CameraCard, {
+  camera: { id: 1, name: 'Webcam', enabled: true },
+  testStatus: { ok: false, message: 'Device index 99 unavailable' },
+}));
+assert.match(html, /role="alert"/);
+assert.match(html, /Device index 99 unavailable/);
+console.log('PASS: camera card displays the actual failed test message.');
