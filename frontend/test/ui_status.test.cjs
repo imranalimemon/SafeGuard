@@ -18,6 +18,7 @@ const result = esbuild.buildSync({
       export { default as Cameras } from './src/pages/CamerasPage';
       export { CameraCard } from './src/pages/CamerasPage';
       export { ReviewState, ReviewActions } from './src/components/ViolationReview';
+      export { default as UploadResult } from './src/components/UploadResult';
       export { default as Upload } from './src/pages/UploadPage';
       export { default as Settings } from './src/pages/SettingsPage';
     `,
@@ -96,3 +97,28 @@ for (const file of fs.readdirSync(path.join(root, 'src'), { recursive: true })) 
   assert.doesNotMatch(source, /coming\s*soon|emergency.stop|\bPTZ\b/i, file);
 }
 console.log('PASS: review actions/timestamps render and unfinished UI controls are absent.');
+
+const imageWorker = { worker_id: 1, status: 'VIOLATION', ppe_status: { Helmet: 'missing', 'Safety Vest': 'present', 'Face Mask': 'mask not assessable' } };
+const created = { id: 42, violation_type: 'Missing: Helmet', timestamp: '2026-10-27T12:00:00', screenshot_path: '/screenshots/evidence.jpg' };
+html = renderToStaticMarkup(React.createElement(components.UploadResult, { model: 'best.onnx', result: {
+  media_type: 'image', filename: 'worker.png', annotated_image_url: '/screenshots/annotated.jpg', workers: [imageWorker],
+  stats: { total_persons: 1, violations: 1, suppressed_by_cooldown: 0 }, created_violations: [created],
+} }));
+assert.match(html, /src="\/screenshots\/annotated.jpg"/);
+assert.match(html, /download="safeguard-annotated.jpg"/);
+assert.match(html, /Workers found: 1/);
+for (const value of ['Helmet', 'Safety Vest', 'Face Mask', 'missing', 'present', 'mask not assessable', 'EV-42']) assert.ok(html.includes(value));
+console.log('PASS: image upload renders annotation, download, workers/PPE states and created records.');
+
+html = renderToStaticMarkup(React.createElement(components.UploadResult, { result: {
+  media_type: 'video', total_frames: 9, frames_processed: 4, worker_observations: 8, max_workers_in_frame: 2,
+  violations_detected: 4, violations_logged: 1, mask_not_assessable_observations: 2, suppressed_by_cooldown: 3,
+  key_frames: [{ frame_number: 3, screenshot_url: '/screenshots/key.jpg', workers: [imageWorker] }],
+  violation_frames: [{ frame_number: 3, violations: [imageWorker] }], created_violations: [created],
+} }));
+assert.match(html, /Frames decoded: 9/); assert.match(html, /Frames analyzed: 4/);
+assert.match(html, /Worker observations: 8/); assert.match(html, /not as unique people/);
+assert.match(html, /download="safeguard-frame-3.jpg"/);
+assert.match(html, /Detected violations by analyzed frame/);
+assert.match(html, /Violations created: 1/);
+console.log('PASS: video upload renders the real summary, key frames, downloads and violation list.');

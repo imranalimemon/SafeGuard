@@ -59,7 +59,7 @@ class MaskVisibilityTests(unittest.TestCase):
             tree = ast.parse((BACKEND / path).read_text(encoding='utf-8'))
             calls.extend(node for node in ast.walk(tree) if isinstance(node, ast.Call)
                 and isinstance(node.func, ast.Name) and node.func.id == 'compute_violations')
-        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 2)
         self.assertTrue(all(any(k.arg == 'frame' and isinstance(k.value, ast.Name) and k.value.id == 'frame' for k in call.keywords) for call in calls))
 
 

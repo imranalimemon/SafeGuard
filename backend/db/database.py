@@ -57,3 +57,11 @@ def ensure_violation_columns(engine) -> None:
 def init_db():
     import db.models
     Base.metadata.create_all(bind=engine)
+
+
+def ensure_alert_settings_columns(engine):
+    """Add policy persistence to legacy settings without rewriting any rows."""
+    with engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql('PRAGMA table_info(alert_settings)')}
+        if 'required_ppe' not in columns:
+            conn.exec_driver_sql('ALTER TABLE alert_settings ADD COLUMN required_ppe VARCHAR')

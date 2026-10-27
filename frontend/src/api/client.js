@@ -9,17 +9,20 @@ export const getDashboardStats = () => client.get('/stats/dashboard');
 export const getViolations = (params) => client.get('/violations', { params });
 export const getViolationById = (id) => client.get(`/violations/${id}`);
 export const reviewViolation = (id, action) => client.patch(`/violations/${id}`, { action });
-export const uploadImage = (file) => {
+export const getUploadLimits = () => client.get('/uploads/limits');
+export const uploadImage = (file, onUploadProgress) => {
   const formData = new FormData();
   formData.append('file', file);
   return client.post('/upload/image', formData, {
+    onUploadProgress,
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
-export const uploadVideo = (file) => {
+export const uploadVideo = (file, onUploadProgress) => {
   const formData = new FormData();
   formData.append('file', file);
   return client.post('/upload/video', formData, {
+    onUploadProgress,
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };

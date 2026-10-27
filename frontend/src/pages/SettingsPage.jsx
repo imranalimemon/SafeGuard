@@ -82,8 +82,9 @@ const SettingsPage = () => {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [activeTab, setActiveTab]     = useState('AI Thresholds');
   const [isSaving, setIsSaving]       = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [saveStatus, setSaveStatus]   = useState(null); // 'success' | 'error'
-  const [requiredPpe, setRequiredPpe] = useState(['Helmet', 'Safety Vest']);
+  const [requiredPpe, setRequiredPpe] = useState([]);
   // Transient per-channel test status: { kind: 'success'|'error', text: string }
   // — the test buttons overwrite this after each press; cleared when the
   // user clicks again or navigates away.
@@ -107,7 +108,7 @@ const SettingsPage = () => {
       try {
         const res  = await getAlertSettings();
         const data = res.data;
-        if (typeof data.confidence_threshold !== 'number') throw new Error('Invalid settings response');
+        if (typeof data.confidence_threshold !== 'number' || !Array.isArray(data.required_ppe)) throw new Error('Invalid settings response');
         if (Array.isArray(data.required_ppe)) setRequiredPpe(data.required_ppe);
         setSettings((prev) => ({
           ...prev,
@@ -115,7 +116,7 @@ const SettingsPage = () => {
           // `email_recipients` is a comma-separated STRING on the backend,
           // not an array — earlier code called `.join(', ')` on a string which
           // silently coerced and produced wrong values on round-trip.
-          emailAddress:       data.email_recipients || prev.emailAddress,
+          emailAddress:       data.email_recipients ?? prev.emailAddress,
           emailCooldown:      data.email_cooldown?.toString()   ?? prev.emailCooldown,
           whatsappAlerts:     data.whatsapp_enabled      ?? prev.whatsappAlerts,
           whatsappNumber:     data.whatsapp_recipient    ?? prev.whatsappNumber,
@@ -135,9 +136,10 @@ const SettingsPage = () => {
   /* ── save ───────────────────────────────── */
   const handleSave = async () => {
     setIsSaving(true);
-    setSaveStatus(null);
+    setSaveStatus(null); setSaveError(null);
     try {
       await updateAlertSettings({
+        required_ppe: requiredPpe,
         email_enabled:       settings.emailAlerts,
         // Backend stores `email_recipients` as a comma-separated STRING.
         // Earlier code split on commas here and the backend then wrote a
@@ -151,7 +153,7 @@ const SettingsPage = () => {
         confidence_threshold: settings.confidenceThreshold / 100.0,
       });
       setSaveStatus('success');
-    } catch { setSaveStatus('error'); }
+    } catch (err) { setSaveStatus('error'); const detail = err.response?.data?.detail; setSaveError(Array.isArray(detail) ? detail.map(item => item.msg).join('; ') : detail || 'Could not save settings.'); }
     finally {
       setIsSaving(false);
       setTimeout(() => setSaveStatus(null), 3000);
@@ -229,6 +231,7 @@ const SettingsPage = () => {
         </div>
       </div>
 
+      {saveError && <p role="alert">{saveError}</p>}
       {/* Tabs */}
       <div className="flex px-6 gap-1" style={{ borderBottom: '1px solid var(--color-outline-variant)', background: 'var(--color-surface-container)', flexShrink: 0 }}>
         {TABS.map((tab) => (
@@ -295,7 +298,7 @@ const SettingsPage = () => {
                       <div>
                         <h4 className="font-data-label uppercase tracking-wider mb-1" style={{ color: '#FF6B00', fontSize: '11px' }}>PPE Requirements</h4>
                         <p className="font-data-label mb-4" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.8, fontSize: '11px' }}>
-                          Helmet, Safety Vest and Face Mask are required. Missing masks are assessed only on sufficiently large workers with visible frontal faces. Other faces are recorded as mask not assessable.
+                          Select the PPE required at this site. Helmet, Safety Vest and Face Mask are the defaults. Masks are assessed only on sufficiently large workers with a visible frontal face; otherwise mask status is not assessable. Changes take effect when saved and persist after restart.
                         </p>
                         <div className="flex flex-col gap-2">
                           {PPE_ITEMS.map((ppe) => (
@@ -312,7 +315,7 @@ const SettingsPage = () => {
                                 className="font-data-label px-2 py-1 rounded"
                                 style={{ color: '#10B981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', fontSize: '10px' }}
                               >
-                                {requiredPpe.includes(ppe.key) ? 'REQUIRED' : 'OPTIONAL'}
+                                <label><input type="checkbox" checked={requiredPpe.includes(ppe.key)} onChange={e => setRequiredPpe(current => e.target.checked ? [...current, ppe.key] : current.filter(key => key !== ppe.key))} /> {requiredPpe.includes(ppe.key) ? 'REQUIRED' : 'OPTIONAL'}</label>
                               </span>
                             </div>
                           ))}

@@ -39,8 +39,8 @@ class Settings:
     PPE_CLASS_IDS: list = [0, 1, 3]
 
     # ── Violation rules ──
-    # Project policy: all three objectives are required. Legacy REQUIRED_PPE
-    # environment values no longer silently disable the mask objective.
+    # Default policy covers all three objectives. Saved site policy is restored
+    # from the DB at startup; legacy REQUIRED_PPE environment values are ignored.
     REQUIRED_PPE: list = ["Helmet", "Safety Vest", "Face Mask"]
     MASK_MIN_PERSON_WIDTH: int = 100
     MASK_MIN_PERSON_HEIGHT: int = 160
@@ -82,6 +82,9 @@ class Settings:
 
     # ── Storage ──
     SCREENSHOT_DIR: str = os.getenv("SCREENSHOT_DIR", "./screenshots")
+    MAX_IMAGE_UPLOAD_BYTES: int = int(os.getenv("MAX_IMAGE_UPLOAD_BYTES", str(10 * 1024 * 1024)))
+    MAX_VIDEO_UPLOAD_BYTES: int = int(os.getenv("MAX_VIDEO_UPLOAD_BYTES", str(100 * 1024 * 1024)))
+    MAX_IMAGE_PIXELS: int = 25_000_000
 
     # ── Debug / development ──
     # When true, alerts are routed through `alerts.debug_receiver` instead of

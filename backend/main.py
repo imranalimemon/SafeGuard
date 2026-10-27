@@ -12,7 +12,10 @@ logger = logging.getLogger("uvicorn.error")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import settings
-from db.database import engine, Base, ensure_violation_columns
+from db.database import engine, Base, ensure_violation_columns, ensure_alert_settings_columns, SessionLocal
+from db.models import AlertSettings
+from runtime_settings import restore_settings
+from starlette.concurrency import run_in_threadpool
 from api import health, upload, violations, stats
 from api import settings as api_settings
 from api import cameras
@@ -24,6 +27,7 @@ Base.metadata.create_all(bind=engine)
 # Idempotent column-level migration for legacy safeguard.db files
 # (no Alembic at this milestone — see db/database.py for details).
 ensure_violation_columns(engine)
+ensure_alert_settings_columns(engine)
 
 app = FastAPI(
     title="SafeGuard AI API",
@@ -57,6 +61,7 @@ app.include_router(websocket_router)
 
 @app.on_event("startup")
 async def startup_event():
+    await run_in_threadpool(restore_settings, SessionLocal, AlertSettings, settings)
     print("=" * 50)
     print("  SafeGuard AI API -- Starting Up")
     print("=" * 50)

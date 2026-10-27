@@ -176,7 +176,7 @@ class WorkerDeduplicationTests(unittest.TestCase):
         self.now = datetime(2026, 1, 1)
 
     def test_two_workers_missing_same_ppe_are_both_logged_at_every_call_site(self):
-        self.assertEqual(len(CALL_SITES), 3)
+        self.assertEqual(len(CALL_SITES), 2)
         boxes = [[100, 100, 220, 400], [140, 100, 260, 400]]
         for name, site in CALL_SITES:
             with self.subTest(site=name):

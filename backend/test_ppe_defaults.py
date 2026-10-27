@@ -6,6 +6,7 @@ import sys
 from types import ModuleType
 import unittest
 from unittest.mock import patch
+from backend import runtime_settings
 
 
 BACKEND = Path(__file__).parent
@@ -44,7 +45,7 @@ class PPEDefaultTests(unittest.TestCase):
         config.settings.DATABASE_URL = "sqlite:///:memory:"
         db_package = ModuleType("db")
         db_package.__path__ = [str(BACKEND / "db")]
-        with patch.dict(sys.modules, {"config": config, "db": db_package}):
+        with patch.dict(sys.modules, {"config": config, "db": db_package, "runtime_settings": runtime_settings}):
             database = load_source("db.database", BACKEND / "db" / "database.py")
             sys.modules["db.database"] = database
             models = load_source("db.models", BACKEND / "db" / "models.py")

@@ -41,6 +41,7 @@ class AlertSettings(Base):
     email_cooldown = Column(Integer, default=30)
     whatsapp_cooldown = Column(Integer, default=60)
     confidence_threshold = Column(Float, default=0.5)
+    required_ppe = Column(String, nullable=True)
 
 class AlertLog(Base):
     __tablename__ = "alert_logs"

@@ -1,61 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { uploadImage, uploadVideo } from '../api/client';
+import React, { useState, useRef, useEffect } from 'react';
+import { uploadImage, uploadVideo, getUploadLimits } from '../api/client';
 import { useSystemHealth } from '../context/SystemHealth';
 
-const DetectionCard = ({ result, model }) => {
-  if (!result) return null;
-  // Backend payload for /upload/image is:
-  //   { detections, violations, annotated_image_url,
-  //     stats: { total_persons, compliant, violations, suppressed_by_cooldown } }
-  // Model identity comes from backend health; missing metrics stay unavailable.
-  const violations = (result.violations ?? []).filter((v) => v.status === 'VIOLATION');
-  const stats = result.stats ?? {};
-  const persons = stats.total_persons ?? 'Not available';
-  const violating = stats.violations ?? result.violations_detected ?? 'Not available';
+import UploadResult from '../components/UploadResult';
+import { validateUpload, uploadError, uploadPhase, validUploadLimits } from '../api/uploadValidation';
 
-  return (
-    <div className="rounded p-4 flex flex-col gap-3 animate-slide-up" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
-      <div className="flex justify-between items-center">
-        <h3 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '15px' }}>Detection Results</h3>
-        <span className="font-data-label px-2 py-0.5 rounded" style={{ background: '#FF6B00', color: '#000', fontSize: '10px', fontWeight: 700 }}>
-          {model ?? 'Model not available'}
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: 'PERSONS', value: persons, color: 'var(--color-data-blue)' },
-          { label: 'VIOLATIONS', value: violating, color: violating > 0 ? '#FF2D55' : '#10B981' },
-          { label: 'MASK NOT ASSESSABLE', value: stats.mask_not_assessable ?? 'Not available', color: 'var(--color-on-surface-variant)' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded p-3 text-center" style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}>
-            <div className="font-data-label mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{label}</div>
-            <div className="font-data-value" style={{ color, fontSize: '18px' }}>{value}</div>
-          </div>
-        ))}
-      </div>
-      {result.mask_not_assessable_observations != null && <p className="font-data-label">Video: {result.mask_not_assessable_observations} mask-not-assessable worker observations across sampled frames (not unique workers).</p>}
-      {(result.violations ?? []).map((worker, i) => <p key={`mask-${i}`} className="font-data-label">Worker {i + 1}: mask {worker.mask_assessment || 'not assessed'}</p>)}
-      {violations.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          {violations.map((v, i) => (
-            <div key={i} className="flex justify-between items-center px-3 py-2 rounded" style={{ background: 'rgba(255,45,85,0.08)', border: '1px solid rgba(255,45,85,0.2)' }}>
-              <span className="font-data-label" style={{ color: '#FF2D55', fontSize: '11px' }}>
-                {v.missing_ppe ? `Missing: ${v.missing_ppe.join(', ')}` : (v.violation_type || 'Violation')}
-              </span>
-              <span className="font-data-value" style={{ color: '#FF6B00', fontSize: '12px' }}>
-                {v.confidence != null ? `${Math.round(v.confidence * 100)}%` : '—'}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-/* ── Queue Item ──────────────────────────────────────────── */
-const QueueItem = ({ file, status }) => (
-  <div className="flex items-center gap-3 px-3 py-2 rounded" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+const QueueItem = ({ file, status, error, progress, onView }) => (
+  <div className="flex flex-wrap items-center gap-3 px-3 py-2 rounded" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
     <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-on-surface-variant)' }}>
       {file.type.startsWith('video') ? 'videocam' : 'image'}
     </span>
@@ -72,8 +23,10 @@ const QueueItem = ({ file, status }) => (
         border: status === 'done' ? '1px solid rgba(16,185,129,0.3)' : status === 'error' ? '1px solid rgba(255,45,85,0.3)' : '1px solid rgba(255,107,0,0.3)',
       }}
     >
-      {status === 'done' ? '✓ Done' : status === 'error' ? '✗ Error' : 'Processing…'}
+      {uploadPhase(status, progress)}
     </span>
+    {error && <p role="alert">{error}</p>}
+    {status === 'done' && <button onClick={onView}>View result</button>}
   </div>
 );
 
@@ -85,32 +38,53 @@ const UploadPage = () => {
   const [queue, setQueue]                 = useState([]);     // [{ file, status, result }]
   const [result, setResult]               = useState(null);
   const [isProcessing, setIsProcessing]   = useState(false);
+  const [limits, setLimits] = useState(null);
+  const [error, setError] = useState(null);
+  const busyRef = useRef(false);
+  const nextId = useRef(0);
+  useEffect(() => {
+    if (!health.reachable) { setLimits(null); return; }
+    let active = true;
+    getUploadLimits().then(res => {
+      if (!validUploadLimits(res.data)) throw new Error('Invalid upload limits');
+      if (active) { setLimits(res.data); setError(null); }
+    }).catch(() => { if (active) { setLimits(null); setError('Upload limits are not available. Check the backend.'); } });
+    return () => { active = false; };
+  }, [health.reachable]);
   const fileInputRef                      = useRef(null);
 
   /* ── file handling ──────────────────── */
   const handleFiles = async (files) => {
-    const fileArr = Array.from(files);
-    const accepted = fileArr.filter((f) => {
-      if (activeTab === 'image') return f.type.startsWith('image/');
-      return f.type.startsWith('video/');
+    if (busyRef.current) return;
+    if (health.state !== 'online' || !limits) { setError('Backend and upload limits must be available before uploading.'); return; }
+    const kind = activeTab;
+    const items = Array.from(files).map(file => {
+      const error = validateUpload(file, kind, limits);
+      return { id: ++nextId.current, file, error, status: error ? 'error' : 'pending' };
     });
-    if (!accepted.length) return;
-
-    setQueue((q) => [...q, ...accepted.map((f) => ({ file: f, status: 'pending' }))]);
-    setIsProcessing(true);
-
-    for (const file of accepted) {
-      try {
-        const res = activeTab === 'image'
-          ? await uploadImage(file)
-          : await uploadVideo(file);
-        setResult(res.data);
-        setQueue((q) => q.map((item) => item.file === file ? { ...item, status: 'done', result: res.data } : item));
-      } catch {
-        setQueue((q) => q.map((item) => item.file === file ? { ...item, status: 'error' } : item));
+    setQueue(q => [...q, ...items]); setError(null);
+    if (items.some(item => !item.error)) setResult(null);
+    busyRef.current = true; setIsProcessing(true);
+    const update = (id, changes) => setQueue(q => q.map(item => item.id === id ? { ...item, ...changes } : item));
+    try {
+      for (const item of items) {
+        if (item.error) continue;
+        update(item.id, { status: 'uploading', progress: 0 });
+        let finished = false;
+        try {
+          const onProgress = event => {
+            if (finished) return;
+            const progress = event.total ? Math.round(event.loaded / event.total * 100) : null;
+            update(item.id, { progress, status: progress === 100 ? 'processing' : 'uploading' });
+          };
+          const res = await (kind === 'image' ? uploadImage : uploadVideo)(item.file, onProgress);
+          if (res.data?.error) throw new Error(res.data.error);
+          if (res.data?.media_type !== kind) throw new Error('Invalid upload response from backend.');
+          setResult(res.data); update(item.id, { status: 'done', result: res.data });
+        } catch (err) { update(item.id, { status: 'error', error: uploadError(err) }); }
+        finally { finished = true; }
       }
-    }
-    setIsProcessing(false);
+    } finally { busyRef.current = false; setIsProcessing(false); }
   };
 
   const onDrop = (e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); };
@@ -155,6 +129,7 @@ const UploadPage = () => {
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  disabled={isProcessing}
                   onClick={() => setActiveTab(tab.id)}
                   className="flex items-center gap-2 px-6 py-3 font-data-label uppercase tracking-wider transition-colors hover:text-on-surface"
                   style={{
@@ -176,7 +151,7 @@ const UploadPage = () => {
               onDrop={onDrop}
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => { if (!isProcessing && limits && health.state === 'online') fileInputRef.current?.click(); }}
               className="relative rounded-lg flex flex-col items-center justify-center p-12 cursor-pointer group transition-all duration-200"
               style={{
                 minHeight: '320px',
@@ -202,10 +177,11 @@ const UploadPage = () => {
                 {isProcessing ? 'Processing…' : 'Drag & Drop media here'}
               </h3>
               <p className="font-data-value mb-8" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
-                Supported: {activeTab === 'image' ? 'JPG, PNG, WEBP' : 'MP4, AVI, MOV'}
+                {limits ? `Supported: ${limits[activeTab].extensions.join(', ')}. Maximum ${limits[activeTab].max_bytes / (1024 * 1024)} MiB.` : 'Upload limits are not available.'}
               </p>
               <button
                 type="button"
+                disabled={isProcessing || !limits || health.state !== 'online'}
                 className="px-8 py-3 rounded font-data-label uppercase tracking-wider transition-colors"
                 style={{
                   background: '#FF6B00',
@@ -221,7 +197,8 @@ const UploadPage = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept={activeTab === 'image' ? 'image/*' : 'video/*'}
+                accept={limits?.[activeTab]?.extensions.join(',') || ''}
+                disabled={isProcessing || !limits || health.state !== 'online'}
                 onChange={onFileSelect}
                 multiple
                 className="hidden"
@@ -229,7 +206,9 @@ const UploadPage = () => {
             </div>
 
             {/* Detection Result */}
-            {result && <DetectionCard result={result} model={health.model_name} />}
+            {error && <p role="alert">{error}</p>}
+            {isProcessing && <p role="status" aria-live="polite">Upload processing is in progress. Video analysis on CPU can take several minutes; the API remains available.</p>}
+            {result && <UploadResult result={result} model={health.model_name} />}
           </div>
 
           {/* Right: Config + Queue (1/3) */}
@@ -248,7 +227,7 @@ const UploadPage = () => {
               ) : (
                 <div className="flex flex-col gap-2">
                   {queue.map((item, i) => (
-                    <QueueItem key={i} file={item.file} status={item.status} />
+                    <QueueItem key={item.id} {...item} onView={() => setResult(item.result)} />
                   ))}
                 </div>
               )}
