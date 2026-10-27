@@ -1,53 +1,64 @@
-# SafeGuard AI — Backend Documentation
+# Backend implementation
 
-## Overview
-The SafeGuard AI backend is a high-performance Python application built with FastAPI. It handles RESTful API requests, real-time WebSocket streaming, file uploads, asynchronous alert triggering, and orchestrates the YOLOv8 machine learning inference pipeline.
+## Runtime and startup
 
-## Tech Stack
-- **Web Framework:** FastAPI (with Uvicorn server)
-- **Database ORM:** SQLAlchemy
-- **Machine Learning:** Ultralytics (YOLOv8)
-- **Image Processing:** OpenCV (`cv2`), NumPy
-- **Environment Management:** `python-dotenv` for `.env` configurations
+The backend is FastAPI + Uvicorn, SQLAlchemy/SQLite, OpenCV, NumPy and ONNX Runtime. `detection/model.py` lazily shares one `PPEDetector` session between health, uploads and live streaming. The current session explicitly selects `CPUExecutionProvider`. Ultralytics is the training/export origin, not the serving library.
 
-## Core Architecture
-The backend is organized inside the `backend/` directory, following a clean, modular structure:
+Start with the root launchers described in [README](../README.md). They run from `backend/`, so relative database/evidence paths resolve there. For a manual local backend (activate the root virtual environment first):
 
-- `main.py`: The FastAPI application entry point. Configures CORS, mounts the static directory for serving screenshots, and registers all API routers and WebSocket endpoints.
-- `config.py`: Centralized configuration management utilizing Pydantic (or simple os/dotenv loading). It loads variables like Database URLs, Alert credentials, API keys, and model paths from the `.env` file.
-- `api/`: Contains all REST API route handlers (Controllers).
-  - `health.py`: Basic API health check endpoints.
-  - `upload.py`: Handles `multipart/form-data` uploads for static images and videos, routing them to the ML pipeline and saving results to the database.
-  - `violations.py`: CRUD operations for accessing historical violation data (supports pagination and filtering).
-  - `stats.py`: Aggregation endpoints for dashboard KPIs (e.g., total violations today, average compliance rate).
-  - `settings.py`: Endpoints to get and update the system configuration (alert toggles, confidence thresholds) stored in the database.
-- `websocket/manager.py`: Manages active WebSocket connections for the live camera feed, broadcasting annotated frames in real-time.
-- `db/`: Database configuration and models (detailed in `database.md`).
-- `detection/`: The ML pipeline (detailed in `ml-violations-alerts.md`).
-- `alerts/`: Notification handlers (detailed in `ml-violations-alerts.md`).
-
-## Request Lifecycle (Example: Image Upload)
-1. **Client Request:** The React frontend sends an image via POST to `/api/upload/image`.
-2. **API Router (`upload.py`):** The file is saved temporarily in `backend/temp/`.
-3. **ML Pipeline (`detection/model.py`):** The image is read via OpenCV and passed to the YOLOv8 model for inference.
-4. **Logic & Annotation:** The `violation_logic.py` determines if PPE is missing based on database settings. The `annotator.py` draws bounding boxes and violation overlays on the image.
-5. **Storage:** The annotated image is saved to `backend/screenshots/`.
-6. **Database Write:** If a violation is detected, a new record is inserted via SQLAlchemy.
-7. **Alert Triggering:** The `alert_manager.py` checks cooldowns and dispatches email/WhatsApp notifications if necessary.
-8. **Response:** A JSON payload containing bounding boxes, stats, and the annotated image URL is returned to the frontend.
-
-## Environment Configuration
-The backend relies heavily on a `.env` file for configuration:
-```env
-DATABASE_URL=sqlite:///./safeguard.db
-MODEL_PATH=../models/yolov8s.pt
-ENABLE_EMAIL_ALERTS=True
-SMTP_SERVER=smtp.gmail.com
-# ... other configurations
-```
-
-## Running the Server
 ```bash
-# Start the FastAPI server with live-reloading
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+cd backend
+python -B -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
+
+Set `ALERT_DELIVERY_MODE=preview` in the process environment before a non-delivering run. Use a disposable database/evidence directory for API tests; importing `main.py` itself initializes tables and runs additive migrations on the configured database. Do not import the application against a protected database merely to inspect routes.
+
+Startup order:
+
+1. Load environment/default configuration (`config.py`). This uses `python-dotenv` and class attributes, not a Pydantic configuration class.
+2. Construct SQLite engine/session factory and SQLAlchemy models.
+3. `create_all` missing tables; add missing violation, settings and alert-log columns. Migration errors are not silently ignored.
+4. Mount `SCREENSHOT_DIR` at `/screenshots` and register routes.
+5. Before serving requests, restore the earliest saved settings row in a worker thread through `runtime_settings.py`. Validate the full configuration before applying it. No row is inserted by a settings GET.
+
+Saved confidence/PPE/recipient/toggle/cooldown values override initial environment defaults. Credentials, network timeout, timezone and delivery mode remain deployment settings. Invalid saved settings stop startup with a validation error.
+
+## Modules
+
+| Path | Responsibility |
+|---|---|
+| `api/health.py` | Load/check the actual session, `SELECT 1`, optional SMTP configuration check; no sends |
+| `api/upload.py` | Validated sync upload handlers, FastAPI worker-pool processing, temp cleanup, result/record creation |
+| `api/violations.py` | Filtered reads, review/archive updates, email preview and manual WhatsApp share |
+| `api/settings.py`, `runtime_settings.py` | Validated save/read/restore, one-channel manual test and test-email preview |
+| `api/cameras.py` | CRUD, capture-open test, local webcam and ONVIF discovery |
+| `api/stats.py` | Counts/aggregations from actual violation rows, recent unarchived incidents |
+| `websocket/live.py` | Dedicated capture thread, latest-frame slot, sampled inference and display-ACK flow |
+| `websocket/manager.py` | Camera lookup, annotation/encoding, persistence and alert scheduling |
+| `detection/` | ONNX preprocessing/postprocessing, PPE association, face visibility, annotation, position dedup |
+| `alerts/` | Shared content, MIME preview, off-loop SMTP/Twilio, scoped cooldowns and result logging |
+| `db/` | SQLite engine, models and additive column migrations |
+
+## Image and video requests
+
+Uploads accept one multipart `file`. Processing functions are synchronous FastAPI routes, so file copying, decoding, inference, rules, annotation and SQL work run in the worker pool rather than the asyncio event loop. A process-local semaphore allows one upload to process at a time; another gets 429 rather than joining an unbounded processing queue.
+
+Image formats: JPEG/PNG/WEBP; default limit 10 MiB plus 25 million decoded pixels. Video containers: MP4/AVI/MOV; default limit 100 MiB. Validation checks extension, MIME, actual image format/video signature and decoder success. Video codec support still depends on OpenCV. The file-size check is performed while copying the received multipart file; it is not an ingress/reverse-proxy body-size limit.
+
+A temporary directory owns the input; `finally` closes it and the upload stream. Video captures are released on success/failure. Newly generated uncommitted images are removed on failure; evidence for already committed video-frame violations remains. Video commits are short per-frame transactions, so a late processing failure can leave valid earlier records/evidence.
+
+Images return all worker assessments separately from confirmed violations and actual created record IDs. Videos analyze the first frame and then every third decoded frame, report observations/max workers, and save up to six representative annotated JPEG key frames. There is no full annotated video download or persistent job queue. Busy state describes analysis without fabricating a completion percentage.
+
+## Live camera flow
+
+`/ws/stream/{camera_id}` opens the selected enabled camera. Capture overwrites a single latest-frame slot. Inference takes the latest eligible frame at `STREAM_DETECTION_INTERVAL` spacing (default 3), dropping missed inputs when inference is slower. Annotation of newer frames reuses the last completed detections/rule results. Violation persistence/alerts run only for fresh inference results.
+
+Each packet includes a capture `frame_id`. The browser sends `{"type":"frame_ack","frame_id":N}` after the image loads. Only one frame is in flight; the next packet uses newer input. No-person compliance is null; before initial inference `stats` is null. Socket close/camera switch clears old images/stats. Failed opening/reads, processing errors or missing delivery acknowledgements produce error states. Native driver reads can still stall; cleanup waits briefly for the capture owner to release the device rather than racing `read()` and `release()`.
+
+## Persistence, alerts and deployment boundaries
+
+Only confirmed violations are inserted into `violations`; unknown-mask-only worker assessments remain in result/live payloads rather than inventing incidents. Record deduplication is source + missing PPE + similar worker box. Alert throttling separately reserves per-channel/source/worker keys, including sends in progress.
+
+SMTP/Twilio and log writes use worker threads. The process delivery-mode gate is checked before constructing clients. Preview attempts may be logged as `preview` by automatic alert flow; dedicated preview GETs are read-only. Live SMTP acceptance and its log/`alert_sent` flag are committed together; database failures are explicitly reported. See [ML and alerts](ml-violations-alerts.md).
+
+The launchers are local development processes, not a production reverse proxy, service manager, authentication layer or TLS setup. WebSocket, HTTP and screenshot routes must be protected before exposing the app beyond a trusted machine/network. Camera tests currently establish `isOpened()` only; a successful test is not proof of continuing frame delivery.
