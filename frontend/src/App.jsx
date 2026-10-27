@@ -8,10 +8,12 @@ import ViolationsPage from './pages/ViolationsPage';
 import CamerasPage from './pages/CamerasPage';
 import UploadPage from './pages/UploadPage';
 import SettingsPage from './pages/SettingsPage';
+import { SystemHealthProvider } from './context/SystemHealth';
 
 function App() {
   return (
     <BrowserRouter>
+      <SystemHealthProvider>
       {/* Fixed sidebar */}
       <Sidebar />
 
@@ -40,6 +42,7 @@ function App() {
 
       {/* Fixed bottom footer */}
       <Footer />
+      </SystemHealthProvider>
     </BrowserRouter>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSystemHealth } from '../context/SystemHealth';
 import {
   listCameras, createCamera, updateCamera, deleteCamera, testCamera, scanCameras,
   autoDetectCameras,
@@ -12,18 +13,18 @@ const emptyForm = () => ({
   ptz_enabled: false, enabled: true,
 });
 
-const StatusBadge = ({ online }) => (
+const StatusBadge = ({ enabled }) => (
   <span
     className="flex items-center gap-1 px-2 py-0.5 rounded font-data-label uppercase tracking-wider"
     style={{
       fontSize: '10px',
-      background: online ? 'rgba(16,185,129,0.15)' : 'rgba(255,45,85,0.15)',
-      border:     online ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,45,85,0.3)',
-      color:      online ? '#10B981' : '#FF2D55',
+      background: enabled ? 'rgba(16,185,129,0.15)' : 'rgba(255,45,85,0.15)',
+      border:     enabled ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,45,85,0.3)',
+      color:      enabled ? '#10B981' : '#FF2D55',
     }}
   >
-    <span className="w-1.5 h-1.5 rounded-full" style={{ background: online ? '#10B981' : '#FF2D55' }} />
-    {online ? 'Online' : 'Offline'}
+    <span className="w-1.5 h-1.5 rounded-full" style={{ background: enabled ? '#10B981' : '#FF2D55' }} />
+    {enabled ? 'Enabled' : 'Disabled'}
   </span>
 );
 
@@ -87,11 +88,11 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
           <h3 className="font-headline-sm" style={{ color: online ? 'var(--color-on-surface)' : 'var(--color-on-surface-variant)', fontSize: '15px' }}>{camera.name}</h3>
           <p className="font-data-label flex items-center gap-1 mt-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>
             <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>router</span>
-            {camera.url || `192.168.1.${camera.id}`}
+            {camera.url || 'Source not available'}
           </p>
         </div>
         <div className="flex flex-col gap-1 items-end">
-          <StatusBadge online={online} />
+          <StatusBadge enabled={camera.enabled} />
           {camera.source_type && <TypeBadge type={camera.source_type} />}
         </div>
       </div>
@@ -106,17 +107,17 @@ const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, testStatus,
             <span className="material-symbols-outlined z-10" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.4, fontSize: '36px' }}>videocam</span>
             <div className="absolute bottom-2 left-2 flex gap-1.5 z-10">
               <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--color-on-surface)', fontSize: '10px', border: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(4px)' }}>
-                {camera.resolution || '1080p'}
+                {camera.resolution || 'Resolution not available'}
               </span>
               <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--color-on-surface)', fontSize: '10px', border: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(4px)' }}>
-                {camera.frame_rate || '30'}fps
+                {camera.frame_rate ? `${camera.frame_rate}fps` : 'FPS not available'}
               </span>
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center text-center">
             <span className="material-symbols-outlined mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '28px' }}>videocam_off</span>
-            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Signal Lost</span>
+            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Camera disabled</span>
           </div>
         )}
       </div>
@@ -535,8 +536,10 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
 
 /* ══════════════════════════════════════════════════════════ */
 const CamerasPage = () => {
+  const health = useSystemHealth();
   const [cameras, setCameras]         = useState([]);
   const [isLoading, setIsLoading]     = useState(true);
+  const [cameraError, setCameraError] = useState(null);
   const [panelOpen, setPanelOpen]     = useState(false);
   const [editing, setEditing]         = useState(null);
   const [form, setForm]               = useState(emptyForm());
@@ -551,7 +554,8 @@ const CamerasPage = () => {
     try {
       const res = await listCameras();
       setCameras(Array.isArray(res.data) ? res.data : []);
-    } catch { setCameras([]); }
+      setCameraError(null);
+    } catch { setCameras([]); setCameraError('Camera configuration is not available.'); }
     finally { setIsLoading(false); }
   }, []);
 
@@ -616,7 +620,7 @@ const CamerasPage = () => {
     setTestStatus((s) => ({ ...s, [id]: { loading: true } }));
     try {
       const res = await testCamera(id);
-      setTestStatus((s) => ({ ...s, [id]: { ok: true, message: res.data?.message } }));
+      setTestStatus((s) => ({ ...s, [id]: { ok: res.data?.ok === true, message: res.data?.message } }));
     } catch (err) {
       setTestStatus((s) => ({ ...s, [id]: { ok: false, message: err?.response?.data?.detail } }));
     }
@@ -648,8 +652,8 @@ const CamerasPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <div className="glass-panel flex items-center gap-2 px-3 py-1.5 rounded">
-            <span className="w-2 h-2 rounded-full" style={{ background: '#10B981', boxShadow: '0 0 8px #10B981' }} />
-            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>SYSTEM ONLINE</span>
+            <span className="w-2 h-2 rounded-full" style={{ background: health.color }} />
+            <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>SYSTEM {health.label.toUpperCase()}</span>
           </div>
           <button
             onClick={() => setAutoDetectOpen(true)}
@@ -681,7 +685,7 @@ const CamerasPage = () => {
           ) : cameras.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-surface-container-highest)' }}>videocam_off</span>
-              <p className="font-headline-sm" style={{ color: 'var(--color-on-surface-variant)' }}>No cameras configured</p>
+              <p className="font-headline-sm" style={{ color: 'var(--color-on-surface-variant)' }}>{cameraError || 'No cameras configured'}</p>
               <button onClick={openAdd} className="px-6 py-2 rounded font-data-label uppercase tracking-wider" style={{ background: '#FF6B00', color: '#000', fontSize: '11px', fontWeight: 700 }}>
                 + Add First Camera
               </button>

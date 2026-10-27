@@ -12,7 +12,7 @@ from datetime import datetime
 
 from db.database import get_db
 from db.models import Violation
-from detection.model import PPEDetector
+from detection.model import get_detector
 from detection.violation_logic import compute_violations
 from detection.annotator import annotate_frame
 from detection.deduplicator import deduplicator
@@ -20,15 +20,6 @@ from config import settings
 from alerts.alert_manager import trigger_alerts
 
 router = APIRouter()
-_detector = None
-
-
-def get_detector():
-    """Lazy-load the PPE detector singleton."""
-    global _detector
-    if _detector is None:
-        _detector = PPEDetector()
-    return _detector
 
 
 def _serialize_detections(detections):

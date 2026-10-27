@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getViolations, shareViolationWhatsApp, getAlertSettings } from '../api/client';
 
-const VIOLATION_TYPES = ['All Types', 'Missing Helmet', 'No High-Vis Vest', 'Unauthorized Zone', 'Missing PPE', 'Camera Obscured'];
-const LOCATIONS = ['Sector 7G', 'Loading Bay A', 'Loading Bay B', 'Main Gate', 'Forge Area'];
+const VIOLATION_TYPES = ['All Types', 'Helmet', 'Safety Vest', 'Face Mask'];
 
 /* ── Severity badge ──────────────────────────────────────── */
 const ViolationBadge = ({ type }) => {
@@ -310,7 +309,8 @@ const ViolationModal = ({ violation, onClose }) => {
 /* ══════════════════════════════════════════════════════════ */
 const ViolationsPage = () => {
   const [violations, setViolations] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(null);
+  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(1);
@@ -321,7 +321,6 @@ const ViolationsPage = () => {
   const [dateTo, setDateTo] = useState('');
   const [violationType, setViolationType] = useState('All Types');
   const [cameraId, setCameraId] = useState('');
-  const [locations, setLocations] = useState({});
 
   const fetchViolations = useCallback(async () => {
     setIsLoading(true);
@@ -335,6 +334,7 @@ const ViolationsPage = () => {
         ...(cameraId.trim() && { camera_id: cameraId.trim() }),
       };
       const res = await getViolations(params);
+      setError(null);
       const data = res.data;
       if (Array.isArray(data)) {
         setViolations(data);
@@ -343,7 +343,7 @@ const ViolationsPage = () => {
         setViolations(data.violations ?? data.items ?? []);
         setTotal(data.total ?? 0);
       }
-    } catch { setViolations([]); }
+    } catch { setViolations([]); setTotal(null); setError('Violation history is not available.'); }
     finally { setIsLoading(false); }
   }, [page, dateFrom, dateTo, violationType, cameraId]);
 
@@ -351,7 +351,7 @@ const ViolationsPage = () => {
 
   const applyFilters = () => { setPage(1); fetchViolations(); };
   const resetFilters = () => {
-    setDateFrom(''); setDateTo(''); setViolationType('All Types'); setCameraId(''); setLocations({});
+    setDateFrom(''); setDateTo(''); setViolationType('All Types'); setCameraId('');
     setPage(1);
   };
 
@@ -416,29 +416,13 @@ const ViolationsPage = () => {
                 type="text"
                 value={cameraId}
                 onChange={(e) => setCameraId(e.target.value)}
-                placeholder="e.g. CAM-01"
+                placeholder="Numeric camera ID, e.g. 1"
                 className="w-full rounded px-2 py-1.5 font-data-value outline-none"
                 style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)', color: 'var(--color-on-surface)', fontSize: '12px' }}
               />
             </div>
 
-            {/* Site Location */}
-            <div>
-              <label className="block font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>SITE LOCATION</label>
-              <div className="flex flex-col gap-2">
-                {LOCATIONS.map((loc) => (
-                  <label key={loc} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!locations[loc]}
-                      onChange={() => setLocations((l) => ({ ...l, [loc]: !l[loc] }))}
-                      style={{ accentColor: '#FF6B00' }}
-                    />
-                    <span className="font-data-label" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>{loc}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+
           </div>
 
           <div className="p-4 mt-auto" style={{ borderTop: '1px solid var(--color-outline-variant)' }}>
@@ -462,7 +446,7 @@ const ViolationsPage = () => {
           >
             <div>
               <div className="font-headline-md font-bold" style={{ color: 'var(--color-on-surface)', fontSize: '20px' }}>
-                {isLoading ? '…' : total} Violations Found
+                {isLoading ? '…' : total ?? 'Not available'} Violations Found
               </div>
               <div className="font-data-label mt-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>
                 {violationType !== 'All Types' ? `Filtered by: ${violationType}` : 'Showing all violations'}
@@ -512,7 +496,7 @@ const ViolationsPage = () => {
                     <tr>
                       <td colSpan={6} className="p-12 text-center">
                         <span className="material-symbols-outlined mb-3 block" style={{ fontSize: '40px', color: 'var(--color-surface-container-highest)' }}>inventory_2</span>
-                        <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>No violations found</p>
+                        <p className="font-data-label" style={{ color: 'var(--color-on-surface-variant)' }}>{error || 'No violations found'}</p>
                       </td>
                     </tr>
                   ) : (
@@ -558,7 +542,7 @@ const ViolationsPage = () => {
             {/* Pagination */}
             <div className="p-3 flex justify-between items-center flex-shrink-0" style={{ background: 'var(--color-surface-container)', borderTop: '1px solid var(--color-outline-variant)' }}>
               <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>
-                Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+                {total == null ? 'Records not available' : total === 0 ? 'Showing 0 of 0' : `Showing ${((page - 1) * PAGE_SIZE) + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
               </span>
               <div className="flex gap-1">
                 <button

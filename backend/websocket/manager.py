@@ -35,18 +35,10 @@ from db.database import SessionLocal
 from db.models import Camera, Violation
 from detection.annotator import annotate_frame
 from detection.deduplicator import deduplicator
-from detection.model import PPEDetector
+from detection.model import get_detector
 from detection.violation_logic import compute_violations
 
 router = APIRouter()
-_detector = None
-
-
-def get_detector():
-    global _detector
-    if _detector is None:
-        _detector = PPEDetector()
-    return _detector
 
 
 class ConnectionManager:
@@ -240,7 +232,7 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
             total_persons = len(violations)
             violating = sum(1 for v in violations if v["status"] == "VIOLATION")
             compliant = max(0, total_persons - violating)
-            compliance_rate = (compliant / total_persons * 100) if total_persons > 0 else 100.0
+            compliance_rate = (compliant / total_persons * 100) if total_persons > 0 else None
 
             data = {
                 "camera_id": camera.id,
@@ -268,7 +260,7 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
                     "persons": total_persons,
                     "compliant": compliant,
                     "violations": violating,
-                    "compliance_rate": round(compliance_rate, 1),
+                    "compliance_rate": round(compliance_rate, 1) if compliance_rate is not None else None,
                 },
             }
             await websocket.send_json(data)

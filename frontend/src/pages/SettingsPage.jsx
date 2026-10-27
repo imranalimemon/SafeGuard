@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAlertSettings, updateAlertSettings, sendTestEmail, sendTestWhatsApp } from '../api/client';
+import { useSystemHealth } from '../context/SystemHealth';
 
 const TABS = ['AI Thresholds', 'Alert Routing', 'User RBAC', 'System Logs'];
 
@@ -77,6 +78,8 @@ const AlertPanel = ({ title, icon, enabled, onToggle, fields, disabled = false }
 
 /* ══════════════════════════════════════════════════════════ */
 const SettingsPage = () => {
+  const health = useSystemHealth();
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [activeTab, setActiveTab]     = useState('AI Thresholds');
   const [isSaving, setIsSaving]       = useState(false);
   const [saveStatus, setSaveStatus]   = useState(null); // 'success' | 'error'
@@ -87,21 +90,24 @@ const SettingsPage = () => {
   const [testStatus, setTestStatus]   = useState({ email: null, whatsapp: null });
   const [testInFlight, setTestInFlight] = useState({ email: false, whatsapp: false });
   const [settings, setSettings]       = useState({
-    emailAlerts:          true,
-    emailAddress:         'safety@company.com',
-    emailCooldown:        '300',
-    whatsappAlerts:       false,
+    emailAlerts:          null,
+    emailAddress:         '',
+    emailCooldown:        '',
+    whatsappAlerts:       null,
     whatsappNumber:       '',
-    whatsappCooldown:     '300',
-    confidenceThreshold:  58,
+    whatsappCooldown:     '',
+    confidenceThreshold:  null,
   });
 
   /* ── fetch on mount ─────────────────────── */
   useEffect(() => {
+    setSettingsLoaded(false);
+    if (!health.reachable) return;
     const load = async () => {
       try {
         const res  = await getAlertSettings();
         const data = res.data;
+        if (typeof data.confidence_threshold !== 'number') throw new Error('Invalid settings response');
         if (Array.isArray(data.required_ppe)) setRequiredPpe(data.required_ppe);
         setSettings((prev) => ({
           ...prev,
@@ -118,10 +124,11 @@ const SettingsPage = () => {
             ? Math.round(data.confidence_threshold * 100)
             : prev.confidenceThreshold,
         }));
+        setSettingsLoaded(true);
       } catch { /* silent fail */ }
     };
     load();
-  }, []);
+  }, [health.reachable]);
 
   const set = (key, val) => setSettings((s) => ({ ...s, [key]: val }));
 
@@ -212,7 +219,7 @@ const SettingsPage = () => {
           )}
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !settingsLoaded || !health.reachable}
             className="flex items-center gap-2 px-6 py-2 rounded font-data-label uppercase tracking-wider transition-colors disabled:opacity-50"
             style={{ background: '#FF6B00', color: '#000', fontSize: '11px', fontWeight: 700 }}
           >
@@ -245,6 +252,7 @@ const SettingsPage = () => {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-6xl mx-auto">
+          {!settingsLoaded || !health.reachable ? <p role="status">Configuration not available.</p> : <>
 
           {activeTab === 'AI Thresholds' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -432,6 +440,7 @@ const SettingsPage = () => {
               </p>
             </div>
           )}
+          </>}
         </div>
       </div>
     </div>

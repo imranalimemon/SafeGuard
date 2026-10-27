@@ -1,7 +1,6 @@
-import json
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from db.database import get_db
 from db.models import Violation
@@ -17,13 +16,10 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     today_start = datetime.combine(today, datetime.min.time())
     today_violations = db.query(Violation).filter(Violation.timestamp >= today_start).count()
 
-    # ── Honest "0" instead of fake mock data ──
-    # The DB only stores VIOLATION records, not a log of every detected person.
-    # Producing `total_persons_detected = total_violations * 2` was a placeholder
-    # that made compliance_rate meaningless. Real person counting requires a
-    # detection-event log table (out of scope for the Core Fixes milestone).
-    total_persons_detected = 0
-    compliance_rate = 0.0
+    # Violation-only storage has no denominator for historical worker totals or
+    # compliance. Null means unavailable; live counts come from the WebSocket.
+    total_persons_detected = None
+    compliance_rate = None
 
     recent_violations_rows = db.query(Violation).order_by(Violation.timestamp.desc()).limit(5).all()
     recent_violations = [_serialize_violation(r) for r in recent_violations_rows]
@@ -31,11 +27,10 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     # Calculate violations by type
     all_violations = db.query(Violation).all()
     violations_by_type = {"Helmet": 0, "Face Mask": 0, "Safety Vest": 0}
-    avg_conf = 0.0
+    confidences = [v.confidence for v in all_violations if v.confidence is not None]
+    avg_conf = sum(confidences) / len(confidences) if confidences else None
 
     if all_violations:
-        total_conf = sum(v.confidence for v in all_violations if v.confidence)
-        avg_conf = total_conf / len(all_violations)
         for v in all_violations:
             for ppe in ["Helmet", "Face Mask", "Safety Vest"]:
                 if v.missing_ppe and ppe in v.missing_ppe:

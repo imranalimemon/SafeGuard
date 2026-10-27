@@ -1,35 +1,24 @@
 import React, { useState, useRef } from 'react';
 import { uploadImage, uploadVideo } from '../api/client';
+import { useSystemHealth } from '../context/SystemHealth';
 
-const MODELS = [
-  { value: 'yolov8s', label: 'YOLOv8s (Standard)' },
-  { value: 'yolov8m', label: 'YOLOv8m (High Accuracy)' },
-  { value: 'yolov8n', label: 'YOLOv8n (Fast)' },
-];
-
-const CLASSES = ['Personnel', 'PPE (Hardhat/Vest)', 'Vehicles', 'Restricted Zones'];
-
-/* ── Detection result card ───────────────────────────────── */
 const DetectionCard = ({ result, model }) => {
   if (!result) return null;
   // Backend payload for /upload/image is:
   //   { detections, violations, annotated_image_url,
   //     stats: { total_persons, compliant, violations, suppressed_by_cooldown } }
-  // `inference_time_ms` and `model` are NOT returned — `model` comes from
-  // the page's selected model state. Older code expected a different shape
-  // (`persons_detected`, `inference_time_ms`) which made the card render
-  // zeros and dashes forever.
-  const violations = result.violations ?? [];
+  // Model identity comes from backend health; missing metrics stay unavailable.
+  const violations = (result.violations ?? []).filter((v) => v.status === 'VIOLATION');
   const stats = result.stats ?? {};
-  const persons = stats.total_persons ?? 0;
-  const violating = stats.violations ?? violations.length;
+  const persons = stats.total_persons ?? 'Not available';
+  const violating = stats.violations ?? result.violations_detected ?? 'Not available';
 
   return (
     <div className="rounded p-4 flex flex-col gap-3 animate-slide-up" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
       <div className="flex justify-between items-center">
         <h3 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '15px' }}>Detection Results</h3>
         <span className="font-data-label px-2 py-0.5 rounded" style={{ background: '#FF6B00', color: '#000', fontSize: '10px', fontWeight: 700 }}>
-          {model || 'YOLOv8s'}
+          {model ?? 'Model not available'}
         </span>
       </div>
       <div className="grid grid-cols-3 gap-2">
@@ -90,14 +79,12 @@ const QueueItem = ({ file, status }) => (
 
 /* ══════════════════════════════════════════════════════════ */
 const UploadPage = () => {
+  const health = useSystemHealth();
   const [activeTab, setActiveTab]         = useState('image');
   const [isDragging, setIsDragging]       = useState(false);
   const [queue, setQueue]                 = useState([]);     // [{ file, status, result }]
   const [result, setResult]               = useState(null);
   const [isProcessing, setIsProcessing]   = useState(false);
-  const [model, setModel]                 = useState('yolov8s');
-  const [confidence, setConfidence]       = useState(70);
-  const [classes, setClasses]             = useState({ Personnel: true, 'PPE (Hardhat/Vest)': true, Vehicles: true, 'Restricted Zones': false });
   const fileInputRef                      = useRef(null);
 
   /* ── file handling ──────────────────── */
@@ -131,7 +118,6 @@ const UploadPage = () => {
   const onDragLeave = () => setIsDragging(false);
   const onFileSelect = (e) => { handleFiles(e.target.files); e.target.value = ''; };
 
-  const toggleClass = (cls) => setClasses((c) => ({ ...c, [cls]: !c[cls] }));
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -145,12 +131,12 @@ const UploadPage = () => {
             Upload &amp; Detect
           </h1>
           <p className="font-data-value mt-0.5" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
-            Process static media through selected inference models.
+            Analyze images and videos using the backend model.
           </p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded" style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#FF6B00' }} />
-          <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>YOLOv8s Active</span>
+          <div className="w-2 h-2 rounded-full" style={{ background: health.color }} />
+          <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '12px' }}>{health.model_name ?? 'Model not available'} · {health.label}</span>
         </div>
       </div>
 
@@ -216,7 +202,7 @@ const UploadPage = () => {
                 {isProcessing ? 'Processing…' : 'Drag & Drop media here'}
               </h3>
               <p className="font-data-value mb-8" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
-                Supported: {activeTab === 'image' ? 'JPG, PNG, WEBP' : 'MP4, AVI, MOV'} (Max 50MB)
+                Supported: {activeTab === 'image' ? 'JPG, PNG, WEBP' : 'MP4, AVI, MOV'}
               </p>
               <button
                 type="button"
@@ -243,65 +229,11 @@ const UploadPage = () => {
             </div>
 
             {/* Detection Result */}
-            {result && <DetectionCard result={result} model={model} />}
+            {result && <DetectionCard result={result} model={health.model_name} />}
           </div>
 
           {/* Right: Config + Queue (1/3) */}
           <div className="flex flex-col gap-4">
-
-            {/* Processing Configuration */}
-            <div className="rounded p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
-              <h3 className="font-data-label uppercase tracking-widest mb-4 pb-2" style={{ color: '#FF6B00', fontSize: '11px', borderBottom: '1px solid var(--color-outline-variant)' }}>
-                Processing Configuration
-              </h3>
-              <div className="flex flex-col gap-5">
-
-                {/* Model */}
-                <div>
-                  <label className="block font-data-label uppercase mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Inference Model</label>
-                  <select
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="w-full rounded px-2 py-2 font-data-value outline-none"
-                    style={{ background: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline)', color: 'var(--color-on-surface)', fontSize: '12px' }}
-                  >
-                    {MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                  </select>
-                </div>
-
-                {/* Confidence Slider */}
-                <div>
-                  <label className="block font-data-label uppercase mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Confidence Threshold</label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range" min={0} max={100} value={confidence}
-                      onChange={(e) => setConfidence(Number(e.target.value))}
-                      className="flex-1" style={{ accentColor: '#FF6B00' }}
-                    />
-                    <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '13px', minWidth: '36px' }}>{confidence}%</span>
-                  </div>
-                </div>
-
-                {/* Detection Classes */}
-                <div>
-                  <label className="block font-data-label uppercase mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>Detection Classes</label>
-                  <div className="flex flex-col gap-2">
-                    {CLASSES.map((cls) => (
-                      <label key={cls} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={classes[cls] ?? false}
-                          onChange={() => toggleClass(cls)}
-                          className="rounded"
-                          style={{ accentColor: '#FF6B00' }}
-                        />
-                        <span className="font-data-value" style={{ color: 'var(--color-on-surface)', fontSize: '13px' }}>{cls}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Batch Queue */}
             <div className="rounded p-5 flex-1 flex flex-col" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useSystemHealth } from '../../context/SystemHealth';
 
 const NAV_LINKS = [
   { name: 'Dashboard',     path: '/',          icon: 'dashboard',       end: true  },
@@ -10,6 +11,7 @@ const NAV_LINKS = [
 ];
 
 const Sidebar = () => {
+  const health = useSystemHealth();
   return (
     <aside
       className="fixed left-0 top-0 h-screen w-64 flex flex-col z-40"
@@ -95,8 +97,8 @@ const Sidebar = () => {
           className="mt-3 flex items-center gap-2 px-3 py-2 rounded"
           style={{ background: 'var(--color-surface-container)', border: '1px solid var(--color-outline-variant)' }}
         >
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#10B981' }} />
-          <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>SYSTEM ONLINE</span>
+          <div className="w-2 h-2 rounded-full" style={{ background: health.color }} />
+          <span className="font-data-label" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>SYSTEM {health.label.toUpperCase()}</span>
         </div>
       </div>
     </aside>

@@ -3,8 +3,21 @@ import numpy as np
 import onnxruntime as ort
 from typing import List, Dict, Tuple
 from pathlib import Path
+from threading import Lock
 
 from config import settings
+
+_detector = None
+_detector_lock = Lock()
+
+
+def get_detector():
+    """Share the loaded session between health checks, uploads, and streams."""
+    global _detector
+    with _detector_lock:
+        if _detector is None:
+            _detector = PPEDetector()
+        return _detector
 
 class PPEDetector:
     def __init__(self, model_path: str = None):
