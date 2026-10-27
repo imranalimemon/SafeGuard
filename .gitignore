@@ -35,3 +35,5 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .env
+
+training_artifacts/
