@@ -194,7 +194,7 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
             'api.upload': SimpleNamespace(_serialize_detections=lambda detections: detections),
             'config': SimpleNamespace(settings=SimpleNamespace(STREAM_DETECTION_INTERVAL=3)),
             'db.database': SimpleNamespace(SessionLocal=lambda: self.db),
-            'db.models': SimpleNamespace(Camera=Mock(), Violation=Mock()),
+            'db.models': SimpleNamespace(Camera=Mock(), Violation=Mock(), WorkerObservation=Mock()),
             'detection.annotator': SimpleNamespace(annotate_frame=self.annotate),
             'detection.deduplicator': SimpleNamespace(deduplicator=Mock()),
             'detection.model': SimpleNamespace(get_detector=self.detector),
@@ -205,6 +205,7 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         self.socket = FakeSocket()
         self.socket.accept = unittest.mock.AsyncMock()
         self.socket.close = unittest.mock.AsyncMock()
+        self.api.record_observation = Mock()
         self.original_writer = self.api._write_violations
         self.api._write_violations = Mock(side_effect=AssertionError('No DB writes allowed'))
         self.api._dispatch_alerts = Mock(side_effect=AssertionError('No alerts allowed'))
@@ -274,7 +275,7 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(packet['workers'], [worker])
         self.assertEqual(self.original_writer(self.camera, frame, [], [worker]), (0, []))
         self.db.add.assert_not_called()
-        self.db.commit.assert_not_called()
+        self.db.commit.assert_called_once()
         self.api.trigger_alerts.assert_not_called()
 
 

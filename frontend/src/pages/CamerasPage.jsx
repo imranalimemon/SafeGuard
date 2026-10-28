@@ -156,7 +156,7 @@ export const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, test
 export const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, formError, editing }) => {
 
   return (
-    <div className="w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline-variant)' }}>
+    <div className="camera-config-panel w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline-variant)' }}>
       {/* Header */}
       <div className="px-4 py-3 flex justify-between items-center" style={{ background: 'var(--color-surface-container)', borderBottom: '1px solid var(--color-outline-variant)' }}>
         <h2 className="font-headline-sm" style={{ color: 'var(--color-on-surface)', fontSize: '16px' }}>

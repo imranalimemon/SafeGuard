@@ -1,0 +1,156 @@
+{
+  "command": "node tools/qa_product.cjs <Playwright-directory> <temporary-auth.json>",
+  "layouts": [
+    {
+      "page": "dashboard",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "cameras",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "violations",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "upload",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "settings",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "logs",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "help",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "scroll_width": 1366
+    },
+    {
+      "page": "dashboard",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "cameras",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "violations",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "upload",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "settings",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "logs",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "help",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "scroll_width": 1920
+    },
+    {
+      "page": "dashboard",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    },
+    {
+      "page": "cameras",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    },
+    {
+      "page": "violations",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    },
+    {
+      "page": "upload",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    },
+    {
+      "page": "settings",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    },
+    {
+      "page": "logs",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    },
+    {
+      "page": "help",
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "scroll_width": 820
+    }
+  ],
+  "frame_skip_saved": "pass",
+  "preview_live_block": "pass",
+  "pdf_download": "pass",
+  "page_errors": []
+}

@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useSystemHealth } from '../../context/SystemHealth';
 import { useAuth } from '../../context/Auth';
+
+export const LiveAlertBanner = ({ mode }) => mode === 'live' ? <strong role="status" className="live-banner">LIVE ALERTS ENABLED</strong> : null;
 
 const Navbar = () => {
   const auth = useAuth();
+  const health = useSystemHealth();
   const [error, setError] = useState(null);
   return (
   <header className="fixed top-0 left-64 right-0 h-16 z-50 flex items-center justify-between px-6" style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-outline-variant)' }}>
+    <LiveAlertBanner mode={health.alert_delivery_mode} />
     <strong style={{ color: '#FF6B00' }}>SafeGuard AI</strong>
     <nav className="flex gap-6">
       <NavLink to="/">Live View</NavLink>

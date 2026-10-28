@@ -110,7 +110,7 @@ class SavedSettingsTests(unittest.TestCase):
         self.database.ensure_alert_settings_columns(engine)
         self.database.ensure_alert_settings_columns(engine)
         with engine.connect() as conn:
-            self.assertEqual(tuple(conn.execute(text('SELECT * FROM alert_settings')).one()), (1, 0.73, None))
+            self.assertEqual(tuple(conn.execute(text('SELECT * FROM alert_settings')).one()), (1, 0.73, None, None))
             self.assertEqual(conn.execute(text('PRAGMA integrity_check')).scalar(), 'ok')
 
     def test_startup_restores_before_starting_debug_receiver_or_serving_requests(self):

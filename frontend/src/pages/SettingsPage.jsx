@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAlertSettings, updateAlertSettings, sendTestEmail, sendTestWhatsApp, previewTestEmail } from '../api/client';
+import DeliveryControl from '../components/DeliveryControl';
 import EmailPreviewButton from '../components/EmailPreview';
 import { useSystemHealth } from '../context/SystemHealth';
 
@@ -20,8 +21,9 @@ const SectionHeading = ({ icon, title, accent = true }) => (
 );
 
 /* ── Toggle Switch ───────────────────────────────────────── */
-const ToggleSwitch = ({ enabled, onChange, disabled = false }) => (
+const ToggleSwitch = ({ enabled, onChange, disabled = false, label }) => (
   <button
+    role="switch" aria-checked={Boolean(enabled)} aria-label={label}
     onClick={() => !disabled && onChange(!enabled)}
     disabled={disabled}
     className="w-10 h-5 rounded-full relative transition-colors disabled:opacity-40"
@@ -35,12 +37,13 @@ const ToggleSwitch = ({ enabled, onChange, disabled = false }) => (
 );
 
 /* ── Field helpers ───────────────────────────────────────── */
-const FieldLabel = ({ children }) => (
-  <label className="block font-data-label uppercase mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{children}</label>
+const FieldLabel = ({ children, htmlFor }) => (
+  <label htmlFor={htmlFor} className="block font-data-label uppercase mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{children}</label>
 );
 
-const TextInput = ({ value, onChange, type = 'text', placeholder = '', disabled = false }) => (
+const TextInput = ({ value, onChange, type = 'text', placeholder = '', disabled = false, id, ...rest }) => (
   <input
+    {...rest} id={id}
     type={type}
     value={value}
     onChange={onChange}
@@ -63,13 +66,13 @@ const AlertPanel = ({ title, icon, enabled, onToggle, fields, disabled = false }
       <SectionHeading icon={icon} title={title} accent={false} />
       <div className="flex justify-between items-center mb-5">
         <span className="font-data-label uppercase" style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}>Enable Notifications</span>
-        <ToggleSwitch enabled={enabled} onChange={onToggle} disabled={disabled} />
+        <ToggleSwitch label={`${title} notifications`} enabled={enabled} onChange={onToggle} disabled={disabled} />
       </div>
       <div className="flex flex-col gap-4">
         {fields.map(({ label, element }) => (
           <div key={label}>
-            <FieldLabel>{label}</FieldLabel>
-            {element}
+            <FieldLabel htmlFor={`setting-${label.replace(/[^a-z0-9]/gi, "-")}`}>{label}</FieldLabel>
+            {React.isValidElement(element) ? React.cloneElement(element, { id: `setting-${label.replace(/[^a-z0-9]/gi, "-")}` }) : element}
           </div>
         ))}
       </div>
@@ -100,6 +103,7 @@ const SettingsPage = () => {
     whatsappNumber:       '',
     whatsappCooldown:     '',
     confidenceThreshold:  null,
+    frameSkip: 3,
   });
 
   /* ── fetch on mount ─────────────────────── */
@@ -114,6 +118,7 @@ const SettingsPage = () => {
         if (Array.isArray(data.required_ppe)) setRequiredPpe(data.required_ppe);
         setSettings((prev) => ({
           ...prev,
+          frameSkip: data.frame_skip ?? 3,
           emailAlerts:        data.email_enabled         ?? prev.emailAlerts,
           // `email_recipients` is a comma-separated STRING on the backend,
           // not an array — earlier code called `.join(', ')` on a string which
@@ -128,7 +133,7 @@ const SettingsPage = () => {
             : prev.confidenceThreshold,
         }));
         setSettingsLoaded(true);
-      } catch { /* silent fail */ }
+      } catch { setSaveError('Settings could not be loaded. Reload when the backend is reachable.'); }
     };
     load();
   }, [health.reachable]);
@@ -142,16 +147,17 @@ const SettingsPage = () => {
     try {
       await updateAlertSettings({
         required_ppe: requiredPpe,
+        frame_skip: Number(settings.frameSkip),
         email_enabled:       settings.emailAlerts,
         // Backend stores `email_recipients` as a comma-separated STRING.
         // Earlier code split on commas here and the backend then wrote a
         // Python-list repr back to the DB; sending the raw string the
         // user typed is correct.
         email_recipients:    settings.emailAddress.trim(),
-        email_cooldown:      parseInt(settings.emailCooldown, 10),
+        email_cooldown:      Number(settings.emailCooldown),
         whatsapp_enabled:    settings.whatsappAlerts,
         whatsapp_recipient:  settings.whatsappNumber,
-        whatsapp_cooldown:   parseInt(settings.whatsappCooldown, 10),
+        whatsapp_cooldown:   Number(settings.whatsappCooldown),
         confidence_threshold: settings.confidenceThreshold / 100.0,
       });
       setSaveStatus('success');
@@ -257,6 +263,11 @@ const SettingsPage = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
+        <DeliveryControl />
+        <p className="text-sm mb-4">Alert recipients and cooldowns are saved below. Email addresses may be comma separated. Cooldowns are seconds per worker/source; zero disables the waiting period. Saving enabled channels does not bypass preview restrictions.</p>
+        <label htmlFor="frame-skip" className="block font-bold">Detection frame interval</label>
+        <input id="frame-skip" type="number" min="1" max="30" step="1" value={settings.frameSkip} disabled={!settingsLoaded} onChange={e=>set('frameSkip',e.target.value)} className="border rounded p-2 mb-2" />
+        <p className="text-sm mb-4">Analyze every Nth frame (1 to 30). Higher intervals reduce inference work while streaming cached annotations. Restart a live stream after saving; recorded video analysis uses the saved interval. Counts are sampled observations, not unique workers.</p>
         <div className="max-w-6xl mx-auto">
           {!settingsLoaded || !health.reachable ? <p role="status">Configuration not available.</p> : <>
 
@@ -280,13 +291,14 @@ const SettingsPage = () => {
                             className="font-data-value px-2 py-1 rounded"
                             style={{ color: '#FF6B00', background: 'var(--color-surface-container-high)', border: '1px solid var(--color-outline)', fontSize: '13px' }}
                           >
-                            {settings.confidenceThreshold}%
+                            {settings.confidenceThreshold == null ? 'Not available' : `${settings.confidenceThreshold}%`}
                           </span>
                         </div>
                         <input
+                          aria-label="Detection confidence"
                           type="range"
                           min={0} max={100}
-                          value={settings.confidenceThreshold}
+                          value={settings.confidenceThreshold ?? ''} disabled={!settingsLoaded}
                           onChange={(e) => set('confidenceThreshold', Number(e.target.value))}
                           style={{ accentColor: '#FF6B00', width: '100%' }}
                         />
@@ -318,7 +330,7 @@ const SettingsPage = () => {
                                 className="font-data-label px-2 py-1 rounded"
                                 style={{ color: '#10B981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', fontSize: '10px' }}
                               >
-                                <label><input type="checkbox" checked={requiredPpe.includes(ppe.key)} onChange={e => setRequiredPpe(current => e.target.checked ? [...current, ppe.key] : current.filter(key => key !== ppe.key))} /> {requiredPpe.includes(ppe.key) ? 'REQUIRED' : 'OPTIONAL'}</label>
+                                <label><input type="checkbox" aria-label={ppe.name} disabled={!settingsLoaded} checked={requiredPpe.includes(ppe.key)} onChange={e => setRequiredPpe(current => e.target.checked ? [...current, ppe.key] : current.filter(key => key !== ppe.key))} /> {requiredPpe.includes(ppe.key) ? 'REQUIRED' : 'OPTIONAL'}</label>
                               </span>
                             </div>
                           ))}
@@ -384,7 +396,7 @@ const SettingsPage = () => {
                   icon="chat"
                   enabled={settings.whatsappAlerts}
                   onToggle={(v) => set('whatsappAlerts', v)}
-                  disabled={false}
+                  disabled={!settingsLoaded || !health.reachable}
                   fields={[
                     {
                       label: 'Phone Number',

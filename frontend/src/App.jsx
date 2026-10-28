@@ -26,7 +26,7 @@ function App() {
 
       {/* Main content: offset below header (64px), left of sidebar (256px), above footer (32px) */}
       <main
-        className="flex flex-col overflow-hidden"
+        className="app-main flex flex-col overflow-hidden"
         style={{
           marginLeft: '256px',
           marginTop: '64px',

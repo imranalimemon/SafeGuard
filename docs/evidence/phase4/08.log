@@ -1,0 +1,30 @@
+COMMAND: node --test test\camera_form.test.mjs test\live_stream.test.mjs test\uploads.test.mjs test\violation_reports.test.mjs
+CWD: I:\AntiGRavity\SafeGuard\frontend
+✔ editing metadata never submits an empty password that erases stored credentials (3.0688ms)
+✔ FastAPI validation arrays become renderable messages instead of crashing React (0.3918ms)
+✔ delete/test failures preserve real server or network errors for the UI (0.4794ms)
+✔ switch closes old connection, clears image/stats, and ignores late callbacks (2.7707ms)
+✔ switching while still connecting closes previous socket (3.0708ms)
+✔ real backend error remains visible after close, with no reconnect timer (0.5912ms)
+✔ watchdog clears frozen image and allows explicit retry (0.4864ms)
+✔ acknowledges only displayed images, once per frame (0.9762ms)
+✔ transport disconnect, malformed messages and image errors clear frames (0.7534ms)
+✔ late image loads cannot acknowledge a new camera; identical JPEGs have new display keys (0.5685ms)
+✔ HTTP 200 body ok:false is failure and preserves actual error message (0.4265ms)
+✔ reconnecting status clears stale image and preserves connection until recovery (1.3223ms)
+✔ upload validation uses backend-provided limits, rejects empty/oversized/unsupported files (2.272ms)
+✔ clear errors preserve HTTP rejection details and validation messages (0.4562ms)
+✔ network progress and backend processing are distinct and never invent processing percent (0.4193ms)
+✔ export collects all matching pages and keeps every current filter (3.5149ms)
+✔ empty exports complete and incomplete server responses fail visibly (1.4342ms)
+✔ CSV escapes commas, quotes, newlines and spreadsheet formulas (1.0304ms)
+✔ PDF has summary, filtered table and evidence; missing thumbnails do not abort (3.9348ms)
+✔ real PDF generation creates a PDF document without a browser or download (53.1067ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 615.0531

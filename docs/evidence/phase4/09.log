@@ -1,0 +1,12 @@
+COMMAND: node test/ui_status.test.cjs
+CWD: I:\AntiGRavity\SafeGuard\frontend
+PASS: footer reflects offline/degraded/online health and supplied model/provider.
+PASS: dashboard has no invented data offline or before the first live frame.
+PASS: fake location filters and unsupported model/class choices are absent.
+PASS: camera card displays the actual failed test message.
+PASS: violation detail and quick-share use the actual API source.
+PASS: review actions/timestamps render and unfinished UI controls are absent.
+PASS: image upload renders annotation, download, workers/PPE states and created records.
+PASS: video upload renders the real summary, key frames, downloads and violation list.
+PASS: email preview shows recipient, exact content, attachment and downloadable MIME without sending.
+PASS: login has labelled password fields, error status and busy state.

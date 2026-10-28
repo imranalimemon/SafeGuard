@@ -29,7 +29,7 @@ test('CSV escapes commas, quotes, newlines and spreadsheet formulas', () => {
 test('PDF has summary, filtered table and evidence; missing thumbnails do not abort', async () => {
   const calls = [], tables = [];
   const doc = {
-    setFontSize: () => {}, text: (...args) => calls.push(args),
+    setFontSize: () => {}, setFillColor: () => {}, rect: (...args) => calls.push(["bar", ...args]), text: (...args) => calls.push(args),
     splitTextToSize: text => text, addPage: () => calls.push(['page']),
     addImage: (...args) => calls.push(['image', ...args]),
   };
@@ -45,6 +45,8 @@ test('PDF has summary, filtered table and evidence; missing thumbnails do not ab
   assert.match(calls.flat().join(' '), /Records: 2/);
   assert.match(calls.flat().join(' '), /camera_id/);
   assert.match(calls.flat().join(' '), /Evidence image unavailable/);
+  assert.ok(calls.some(call => call[0] === 'bar'));
+  assert.match(calls.flat().join(' '), /Date range UTC/);
   assert.equal(tables[0].body.length, 2);
   assert.equal(tables[0].body[0][4], 'escalated');
   assert.equal(calls.filter(call => call[0] === 'image').length, 1);

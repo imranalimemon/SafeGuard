@@ -1,0 +1,10 @@
+{
+  "command": "python -B tools/inspect_pdf.py docs/evidence/phase4/filtered-report.pdf",
+  "pages": 5,
+  "bytes": 97656,
+  "opens": true,
+  "title_page": true,
+  "summary_chart_page": true,
+  "filtered_table": true,
+  "evidence_thumbnails": true
+}

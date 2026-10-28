@@ -75,6 +75,8 @@ class Settings:
     ALERT_DELIVERY_MODE: str = os.getenv("ALERT_DELIVERY_MODE", "preview").lower()
     if ALERT_DELIVERY_MODE not in {"preview", "live"}:
         raise ValueError("ALERT_DELIVERY_MODE must be preview or live")
+    # Every process starts unconfirmed; DB values cannot enable live transports.
+    ALERT_LIVE_CONFIRMED: bool = False
     ALERT_TIMEZONE: str = os.getenv("ALERT_TIMEZONE", "Asia/Karachi")
     ALERT_NETWORK_TIMEOUT_SECONDS: float = float(os.getenv("ALERT_NETWORK_TIMEOUT_SECONDS", "10"))
     if not 0 < ALERT_NETWORK_TIMEOUT_SECONDS <= 60:

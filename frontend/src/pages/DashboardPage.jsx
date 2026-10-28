@@ -1,3 +1,4 @@
+import Analytics from '../components/Analytics';
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getDashboardStats, listCameras, reviewViolation } from '../api/client';
@@ -39,7 +40,7 @@ const StatTile = ({ label, value, accent = false }) => (
       <div className="font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)' }}>{label}</div>
       <div
         className="font-headline-md"
-        style={{ color: accent ? '#FF2D55' : 'var(--color-on-surface)', fontSize: '22px', fontFamily: 'Geist, sans-serif', fontWeight: 600, ...(accent ? { animation: 'pulse 2s infinite' } : {}) }}
+        style={{ color: accent ? '#FF2D55' : 'var(--color-on-surface)', fontSize: typeof value === 'string' ? '16px' : '22px', overflowWrap: 'anywhere', fontFamily: 'Geist, sans-serif', fontWeight: 600, ...(accent ? { animation: 'pulse 2s infinite' } : {}) }}
       >
         {value}
       </div>
@@ -151,10 +152,10 @@ const DashboardPage = () => {
   const recentViolations = history?.recent_violations ?? [];
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="dashboard-layout flex flex-wrap h-full overflow-auto">
 
       {/* One selected, configured camera; no placeholder camera slots. */}
-      <section className="flex-1 flex flex-col gap-2 p-4 h-full overflow-hidden">
+      <section className="dashboard-live flex-1 min-w-0 flex flex-col gap-2 p-4 h-full overflow-hidden">
         {health.state === 'offline' && <p role="status">Backend offline. Live data is not available.</p>}
         {health.state === 'degraded' && <p role="status">Backend reachable, but {!health.model_loaded ? 'model is unavailable' : 'database is unavailable'}.</p>}
         {actionError && <p role="alert">{actionError}</p>}
@@ -188,6 +189,7 @@ const DashboardPage = () => {
             <div className="flex items-center gap-2">
               {/* Camera selector */}
               <select
+                aria-label="Live camera"
                 value={selectedCameraId || ''}
                 onChange={handleCameraChange}
                 disabled={cameras.length === 0}
@@ -260,6 +262,7 @@ const DashboardPage = () => {
           </div>
         </div>
       </aside>
+      {health.reachable && <div className="w-full p-4"><Analytics /></div>}
     </div>
   );
 };

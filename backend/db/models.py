@@ -56,6 +56,7 @@ class AlertSettings(Base):
     whatsapp_cooldown = Column(Integer, default=60)
     confidence_threshold = Column(Float, default=0.5)
     required_ppe = Column(String, nullable=True)
+    frame_skip = Column(Integer, nullable=True)
 
 class AlertLog(Base):
     __tablename__ = "alert_logs"
@@ -85,8 +86,8 @@ class Camera(Base):
     `source = f"camera:{camera.id}"`. No FK is added — string-encoding keeps
     the migration trivial and matches the pattern used by image/video uploads.
 
-    NOTE: RTSP credentials are stored as plaintext in this FYP. Build the full
-    URL at producer time and never log it.
+    Network URLs and credentials are encrypted with the deployment Fernet key.
+    API serialization omits credentials and URL query tokens.
     """
     __tablename__ = "cameras"
 
@@ -99,3 +100,15 @@ class Camera(Base):
     location = Column(String, nullable=True)
     enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None))
+
+
+class WorkerObservation(Base):
+    __tablename__ = 'worker_observations'
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, nullable=False, index=True, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None))
+    source = Column(String, nullable=False, index=True)
+    workers = Column(Integer, nullable=False)
+    compliant = Column(Integer, nullable=False)
+    violating = Column(Integer, nullable=False)
+    unknown = Column(Integer, nullable=False)
+    mask_unknown = Column(Integer, nullable=False)

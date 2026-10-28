@@ -1,0 +1,16 @@
+COMMAND: C:\Users\imran\AppData\Local\Temp\safeguard-master-6ceo9ejc\venv\Scripts\python.exe -B -m unittest backend.test_detection_model backend.test_ppe_association backend.test_ppe_defaults backend.test_status backend.test_live_stream backend.test_mask_visibility backend.test_violation_workflow backend.test_uploads backend.test_saved_settings backend.test_alerts
+CWD: I:\AntiGRavity\SafeGuard
+.............................................Camera not available: cannot open camera
+Stream failed (RuntimeError)
+..Camera not available: camera stopped returning frames
+Stream failed (RuntimeError)
+..Stream failed (RuntimeError)
+......Camera not available: camera stopped returning frames
+.Camera inference failed (ValueError)
+....Camera not available: cannot open camera
+....................Executing <Task pending name='Task-95' coro=<UploadResponsivenessTests.test_real_image_route_does_not_block_event_loop_during_slow_inference() running at I:\AntiGRavity\SafeGuard\backend\test_uploads.py:257> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\imran\AppData\Local\Programs\Python\Python314\Lib\asyncio\base_events.py:459> cb=[_run_until_complete_cb() at C:\Users\imran\AppData\Local\Programs\Python\Python314\Lib\asyncio\base_events.py:181] created at C:\Users\imran\AppData\Local\Programs\Python\Python314\Lib\asyncio\runners.py:109> took 0.257 seconds
+..................................................
+----------------------------------------------------------------------
+Ran 130 tests in 19.863s
+
+OK

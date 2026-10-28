@@ -38,7 +38,7 @@ def health():
         "execution_providers": providers,
         "email_enabled": settings.ENABLE_EMAIL_ALERTS,
         "whatsapp_enabled": settings.ENABLE_WHATSAPP_ALERTS,
-        "alert_delivery_mode": 'preview' if settings.ALERT_DEBUG_MODE else settings.ALERT_DELIVERY_MODE,
+        "alert_delivery_mode": 'preview' if settings.ALERT_DEBUG_MODE else ('live' if settings.ALERT_DELIVERY_MODE == 'live' and getattr(settings, 'ALERT_LIVE_CONFIRMED', True) else 'preview'),
         "smtp_configured": smtp['configured'],
         "smtp_configuration_error": smtp['error'],
         "smtp_status_note": 'Configuration check only; network reachability and authentication are not tested.',

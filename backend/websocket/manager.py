@@ -1,4 +1,8 @@
 """Camera WebSockets: latest-frame capture, sampled inference and annotated JPEGs."""
+try:
+    from observations import record_observation
+except ModuleNotFoundError:
+    from backend.observations import record_observation
 import asyncio
 import base64
 import json
@@ -14,7 +18,7 @@ from alerts.alert_manager import trigger_alerts
 from api.upload import _serialize_detections
 from config import settings
 from db.database import SessionLocal
-from db.models import Camera, Violation
+from db.models import Camera, Violation, WorkerObservation
 from detection.annotator import annotate_frame
 from detection.deduplicator import deduplicator
 from detection.model import get_detector
@@ -78,6 +82,8 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
     screenshot_disk_path = None
 
     try:
+        record_observation(db, violations, f"camera:{camera.id}", WorkerObservation)
+        db.commit()
         for v in violations:
             if v["status"] != "VIOLATION":
                 continue
@@ -197,12 +203,11 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
 
         async def record(frame, result):
             detections, violations = result
-            if violations:
-                _, pending = await asyncio.to_thread(
-                    _write_violations, camera, frame, detections, violations
-                )
-                if pending:
-                    await asyncio.to_thread(_dispatch_alerts, pending)
+            _, pending = await asyncio.to_thread(
+                _write_violations, camera, frame, detections, violations
+            )
+            if pending:
+                await asyncio.to_thread(_dispatch_alerts, pending)
 
         stream = LatestFrameStream(
             lambda: _build_capture(camera), analyze,

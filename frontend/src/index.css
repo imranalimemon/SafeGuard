@@ -274,3 +274,32 @@ input[type="range"]::-webkit-slider-runnable-track {
 .login-card button, .login-retry { padding: .65rem; background: var(--color-primary); color: var(--color-on-primary); border-radius: .3rem; }
 .login-retry { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); }
 :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+/* Product layout: preserve document scrolling without clipped status values. */
+.analytics-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem; }
+.analytics-panel { width:100%;overflow-wrap:anywhere; }
+.analytics-panel th,.analytics-panel td { text-align:left;padding:.4rem; }
+.live-banner { background:#a00024;color:white;padding:.3rem;border-radius:.2rem;font-size:.75rem; }
+.app-main button:focus-visible,.app-main input:focus-visible,.app-main select:focus-visible { outline:2px solid #ff6b00;outline-offset:2px; }
+@media(max-width:1100px) {
+  body > #root > aside { width:192px; }
+  body > #root > header,body > #root > footer { left:192px; }
+  body > #root > .app-main { margin-left:192px!important; }
+  .analytics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .dashboard-layout { display:block; }
+  .dashboard-live { height:480px; }
+  .dashboard-layout > aside { width:100%;height:auto;min-height:500px; }
+  .app-main .flex.justify-between { flex-wrap:wrap;gap:.5rem; }
+  header nav { gap:.6rem!important;font-size:.75rem; }
+  footer { padding-left:.5rem!important;padding-right:.5rem!important; }
+  footer > div { font-size:9px!important;gap:.25rem!important; }
+  footer nav { font-size:9px!important;gap:.4rem!important; }
+}
+@media(max-width:760px) {
+  body > #root > aside { width:150px; }
+  body > #root > header,body > #root > footer { left:150px; }
+  body > #root > .app-main { margin-left:150px!important; }
+  header { padding:.5rem!important;flex-wrap:wrap; }
+  footer { height:48px!important;flex-wrap:wrap; }
+  .app-main { margin-bottom:48px!important;height:calc(100vh - 112px)!important; }
+}
+@media(max-width:1100px){.camera-config-panel {position:fixed;right:0;top:64px;bottom:32px;width:min(360px,calc(100vw - 192px));z-index:70;}}

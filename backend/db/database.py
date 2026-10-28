@@ -65,6 +65,8 @@ def ensure_alert_settings_columns(engine):
         columns = {row[1] for row in conn.exec_driver_sql('PRAGMA table_info(alert_settings)')}
         if 'required_ppe' not in columns:
             conn.exec_driver_sql('ALTER TABLE alert_settings ADD COLUMN required_ppe VARCHAR')
+        if 'frame_skip' not in columns:
+            conn.exec_driver_sql('ALTER TABLE alert_settings ADD COLUMN frame_skip INTEGER')
 
 
 def ensure_alert_log_columns(engine):

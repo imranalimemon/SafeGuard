@@ -45,13 +45,38 @@ async function evidenceImage(path) {
 }
 
 export async function buildPDF(rows, filters, { doc = new jsPDF(), table = autoTable, loadImage = evidenceImage } = {}) {
-  doc.setFontSize(18); doc.text('SafeGuard PPE violation report', 14, 18);
+  doc.setFontSize(22); doc.text('SafeGuard PPE violation report', 14, 28);
+  doc.setFontSize(12); doc.text('Construction safety review', 14, 40);
   doc.setFontSize(10);
-  const summary = ['Helmet', 'Safety Vest', 'Face Mask'].map(ppe => `${ppe}: ${rows.filter(r => (r.missing_ppe || r.violation_type || '').includes(ppe)).length}`).join(' | ');
-  doc.text(`Generated UTC: ${new Date().toISOString()}`, 14, 26);
-  doc.text(`Records: ${rows.length} | ${summary}`, 14, 33);
-  doc.text(doc.splitTextToSize(`Filters: ${JSON.stringify(filters)}`, 180), 14, 40);
-  table(doc, { startY: 60, head: [['ID', 'UTC timestamp', 'Missing PPE', 'Source', 'Review status']], body: rows.map(r => [r.id, r.timestamp, r.missing_ppe || r.violation_type, r.source || '', r.review_status || 'open']), styles: { fontSize: 8 } });
+  const stamps = rows.map(row => row.timestamp).filter(Boolean).sort();
+  const range = `${filters.date_from || stamps[0]?.slice(0,10) || 'Not available'} to ${filters.date_to || stamps.at(-1)?.slice(0,10) || 'Not available'}`;
+  doc.text(`Date range UTC: ${range}`, 14, 55);
+  doc.text(`Generated UTC: ${new Date().toISOString()}`, 14, 64);
+  doc.text(`Records: ${rows.length}`, 14, 73);
+  doc.text(doc.splitTextToSize(`Active filters: ${JSON.stringify(filters)}`, 180), 14, 84);
+  doc.text('Recorded incidents support human review; observations are not unique workers.',14,112);
+  doc.addPage();
+  doc.setFontSize(16); doc.text('Summary of filtered records',14,20);
+  const ppe = ['Helmet','Safety Vest','Face Mask'].map(name => [name, rows.filter(row => (row.missing_ppe || row.violation_type || '').includes(name)).length]);
+  const review = Object.entries(rows.reduce((counts,row)=>{const name=row.review_status||'open';counts[name]=(counts[name]||0)+1;return counts;},{}));
+  const chart = (title, entries, top) => {
+    doc.setFontSize(11); doc.text(title,14,top);
+    if (!entries.length) { doc.text('No matching records.',14,top+10); return; }
+    const maximum=Math.max(1,...entries.map(([,count])=>count));
+    entries.forEach(([label,count],index)=>{
+      const y=top+8+index*13;
+      doc.setFontSize(9);doc.text(String(label),14,y+4);
+      doc.setFillColor(255,107,0);doc.rect(70,y,100*count/maximum,6,'F');
+      doc.text(String(count),175,y+4);
+    });
+  };
+  chart('Missing PPE (a record can contain several items)',ppe,35);
+  chart('Review status',review,100);
+  const byDay=Object.entries(rows.reduce((counts,row)=>{if(row.timestamp){const day=row.timestamp.slice(0,10);counts[day]=(counts[day]||0)+1;}return counts;},{})).sort(([a],[b])=>a.localeCompare(b));
+  // Paginate date charts so a long report never clips daily counts.
+  for(let offset=0;offset<byDay.length;offset+=14){doc.addPage();chart('Recorded violations by day (UTC)',byDay.slice(offset,offset+14),20);}
+  doc.addPage();doc.setFontSize(16);doc.text('Filtered incident table',14,20);
+  table(doc, { startY: 30, head: [['ID', 'UTC timestamp', 'Missing PPE', 'Source', 'Review status']], body: rows.map(r => [r.id, r.timestamp, r.missing_ppe || r.violation_type, r.source || '', r.review_status || 'open']), styles: { fontSize: 8 } });
   const evidence = new Map();
   rows.forEach(r => { if (r.screenshot_path && !evidence.has(r.screenshot_path)) evidence.set(r.screenshot_path, r.id); });
   let y = 300;

@@ -1,3 +1,4 @@
+import useDialog from '../hooks/useDialog';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getViolations, shareViolationWhatsApp, getAlertSettings, reviewViolation, previewViolationEmail } from '../api/client';
 import EmailPreviewButton from '../components/EmailPreview';
@@ -207,6 +208,7 @@ const WhatsAppSharePanel = ({ violation }) => {
 
 /* ── Detail Modal ────────────────────────────────────────── */
 export const ViolationModal = ({ violation, onClose, onAction, busy }) => {
+  const dialogRef = useDialog(onClose, Boolean(violation));
   if (!violation) return null;
 
   return (
@@ -216,6 +218,7 @@ export const ViolationModal = ({ violation, onClose, onAction, busy }) => {
       onClick={onClose}
     >
       <div
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label="Violation detail" tabIndex={-1}
         className="rounded-xl max-w-4xl w-full flex flex-col overflow-hidden animate-slide-up"
         style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)', boxShadow: '0 25px 50px rgba(0,0,0,0.15)', borderLeft: '2px solid #FF6B00', maxHeight: '90vh' }}
         onClick={(e) => e.stopPropagation()}
@@ -411,6 +414,7 @@ const ViolationsPage = () => {
             <div>
               <label className="block font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>VIOLATION TYPE</label>
               <select
+                aria-label="Violation type"
                 value={violationType}
                 onChange={(e) => setViolationType(e.target.value)}
                 className="w-full rounded px-2 py-1.5 font-data-value outline-none"

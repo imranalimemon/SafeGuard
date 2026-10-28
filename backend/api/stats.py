@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
 from db.database import get_db
-from db.models import Violation
+from db.models import Violation, WorkerObservation
 from api.violations import _serialize_violation
 
 router = APIRouter()
@@ -45,3 +45,21 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         "violations_by_type": violations_by_type,
         "recent_violations": recent_violations,
     }
+
+@router.get('/api/stats/analytics')
+def analytics(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    by_day = [{'date': str(day), 'violations': count} for day,count in db.query(func.date(Violation.timestamp),func.count()).group_by(func.date(Violation.timestamp)).order_by(func.date(Violation.timestamp)).all()]
+    by_camera = [{'source': source or 'Source not recorded', 'violations': count} for source,count in db.query(Violation.source,func.count()).group_by(Violation.source).all()]
+    reviews = {status or 'open': count for status,count in db.query(Violation.review_status,func.count()).group_by(Violation.review_status).all()}
+    types = {'Helmet':0,'Safety Vest':0,'Face Mask':0}
+    for (missing,) in db.query(Violation.missing_ppe).all():
+        for name in set(part.strip() for part in (missing or '').split(',')):
+            if name in types: types[name]+=1
+    trend=[]
+    query=db.query(func.date(WorkerObservation.timestamp),func.sum(WorkerObservation.workers),func.sum(WorkerObservation.compliant),func.sum(WorkerObservation.violating),func.sum(WorkerObservation.unknown),func.count()).group_by(func.date(WorkerObservation.timestamp)).order_by(func.date(WorkerObservation.timestamp))
+    for day,workers,compliant,violating,unknown,frames in query.all():
+        denominator=compliant+violating
+        trend.append({'date':str(day),'worker_observations':workers,'compliant':compliant,'violating':violating,'unknown':unknown,'frames_analyzed':frames,'assessed_denominator':denominator,'compliance_rate':round(compliant/denominator*100,2) if denominator else None})
+    return {'violations_per_day':by_day,'violations_by_source':by_camera,'violations_by_type':types,'review_status_counts':reviews,'compliance_trend':trend,
+            'note':'All recorded violations, including archived. Compliance counts sampled worker observations, not unique workers; unknown-only workers are excluded from its denominator. Historical records before observation storage have no compliance denominator.'}

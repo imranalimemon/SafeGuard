@@ -142,7 +142,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.smtp.assert_not_called(); self.twilio.assert_not_called()
 
     async def test_database_result_writes_also_run_off_event_loop(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'
         original = self.alert_manager._record_result
         threads = []
         def record(*args):
@@ -153,14 +153,14 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(threads); self.assertNotIn(threading.get_ident(), threads)
 
     async def test_database_failure_after_send_is_reported_without_claiming_log_success(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'
         with patch.object(self.alert_manager, 'SessionLocal', side_effect=RuntimeError('fake log DB failure')), self.assertLogs('alerts.alert_manager', level='ERROR'):
             result = await self.alert_manager.trigger_alerts(self.data)
         self.assertTrue(result['email']['sent']); self.assertFalse(result['email']['logged'])
         self.assertIn('database logging failed', result['email']['message'])
 
     async def test_twilio_wait_does_not_block_event_loop(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ENABLE_WHATSAPP_ALERTS = True
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ENABLE_WHATSAPP_ALERTS = True
         self.twilio_mode = 'slow'
         task = asyncio.create_task(self.whatsapp_service.send_whatsapp_alert(self.data))
         self.assertTrue(await asyncio.to_thread(self.entered.wait, 1))
@@ -171,12 +171,12 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue((await task).ok)
 
     async def test_debug_flag_also_blocks_network_even_if_live_mode_is_set(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ALERT_DEBUG_MODE = True
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ALERT_DEBUG_MODE = True
         result = await self.email_service.send_email_alert(self.data)
         self.assertEqual(result.transport, 'preview'); self.smtp.assert_not_called()
 
     async def test_smtp_success_logs_actual_recipient_and_sets_email_flag(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'
         result = await self.alert_manager.trigger_alerts(self.data)
         self.assertTrue(result['email']['ok']); self.assertTrue(result['email']['sent']); self.assertTrue(self.emailed())
         row = self.logs()[0]
@@ -186,14 +186,14 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(self.sent[0][2], threading.get_ident())
 
     async def test_authentication_error_is_returned_and_recorded(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'auth'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'auth'
         with self.assertLogs('alerts.email_service', level='ERROR'):
             result = await self.settings_api.test_email_alert()
         self.assertFalse(result['ok']); self.assertIn('535', result['message']); self.assertIn('fake authentication rejected', result['message'])
         self.assertEqual(self.logs()[0].status, 'failed'); self.assertFalse(self.emailed())
 
     async def test_timeout_has_failure_log_and_does_not_consume_worker_cooldown(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'timeout'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'timeout'
         with self.assertLogs('alerts.email_service', level='ERROR') as captured:
             first = await self.alert_manager.trigger_alerts(self.data)
         self.assertIn('timeout', first['email']['message']); self.assertIn('network timeout', ' '.join(captured.output))
@@ -202,7 +202,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(second['email']['sent']); self.assertEqual([r.status for r in self.logs()], ['failed', 'success'])
 
     async def test_failure_after_success_never_clears_historical_email_flag(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'
         await self.alert_manager.trigger_alerts(self.data)
         self.throttle.throttle.reset(); self.smtp_mode = 'timeout'
         with self.assertLogs('alerts.email_service', level='ERROR'):
@@ -210,7 +210,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.emailed())
 
     async def test_partial_smtp_acceptance_records_failure_detail_but_keeps_true_sent_flag(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'partial'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'partial'
         self.cfg.ALERT_EMAIL_TO = 'configured@example.invalid, refused@example.invalid'
         with self.assertLogs('alerts.email_service', level='ERROR'):
             result = await self.alert_manager.trigger_alerts(self.data)
@@ -218,7 +218,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('1/2', self.logs()[0].message)
 
     async def test_manual_test_sends_one_message_to_configured_recipient_only(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'
         self.assertEqual(len(inspect.signature(self.settings_api.test_email_alert).parameters), 0)
         result = await self.settings_api.test_email_alert()
         self.assertTrue(result['ok']); self.assertEqual(len(self.sent), 1)
@@ -232,7 +232,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result['ok']); self.smtp.assert_not_called(); self.assertEqual(self.logs(), [])
 
     async def test_other_workers_and_cameras_do_not_suppress_each_other(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'
         await self.alert_manager.trigger_alerts(self.data)
         jitter = {**self.data, 'person_bbox': [11, 10, 101, 200]}
         duplicate = await self.alert_manager.trigger_alerts(jitter)
@@ -243,7 +243,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.sent), 3)
 
     async def test_inflight_same_worker_is_reserved_and_smtp_does_not_block_loop(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'slow'
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.smtp_mode = 'slow'
         task = asyncio.create_task(self.alert_manager.trigger_alerts(self.data))
         self.assertTrue(await asyncio.to_thread(self.entered.wait, 1))
         try:
@@ -255,13 +255,13 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.sent), 1)
 
     async def test_twilio_uses_timeout_worker_and_does_not_set_email_flag(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ENABLE_EMAIL_ALERTS = False; self.cfg.ENABLE_WHATSAPP_ALERTS = True
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ENABLE_EMAIL_ALERTS = False; self.cfg.ENABLE_WHATSAPP_ALERTS = True
         result = await self.alert_manager.trigger_alerts(self.data)
         self.assertTrue(result['whatsapp']['ok']); self.http.assert_called_once_with(timeout=10)
         self.assertEqual(self.logs()[0].channel, 'whatsapp'); self.assertFalse(self.emailed())
 
     async def test_twilio_timeout_is_logged_and_returned(self):
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ENABLE_EMAIL_ALERTS = False; self.cfg.ENABLE_WHATSAPP_ALERTS = True
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ENABLE_EMAIL_ALERTS = False; self.cfg.ENABLE_WHATSAPP_ALERTS = True
         self.twilio_mode = 'timeout'
         with self.assertLogs('alerts.whatsapp_service', level='ERROR'):
             result = await self.alert_manager.trigger_alerts(self.data)
@@ -281,7 +281,7 @@ class AlertTests(unittest.IsolatedAsyncioTestCase):
         result = health.health()
         self.assertTrue(result['db_connected']); self.assertTrue(result['model_loaded']); self.assertTrue(result['smtp_configured'])
         self.assertEqual(result['alert_delivery_mode'], 'preview')
-        self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ALERT_DEBUG_MODE = True
+        self.cfg.ALERT_LIVE_CONFIRMED = True; self.cfg.ALERT_DELIVERY_MODE = 'live'; self.cfg.ALERT_DEBUG_MODE = True
         self.assertEqual(health.health()['alert_delivery_mode'], 'preview')
         self.cfg.SMTP_PASSWORD = ''
         result = health.health(); self.assertFalse(result['smtp_configured']); self.assertIn('SMTP_PASSWORD', result['smtp_configuration_error'])

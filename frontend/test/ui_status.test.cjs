@@ -11,6 +11,7 @@ const root = path.resolve(__dirname, '..');
 const result = esbuild.buildSync({
   stdin: {
     contents: `
+      export { LiveAlertBanner } from './src/components/layout/Navbar';
       export { LoginForm } from './src/context/Auth';
       export { SystemHealthContext } from './src/context/SystemHealth';
       export { default as Dashboard } from './src/pages/DashboardPage';
@@ -164,3 +165,6 @@ console.log('PASS: login has labelled password fields, error status and busy sta
 
 assert.match(render("Footer", online), /href="\/logs"/);
 assert.match(render("Footer", online), /href="\/help"/);
+
+assert.match(renderToStaticMarkup(React.createElement(components.LiveAlertBanner, {mode:"live"})), /LIVE ALERTS ENABLED/);
+assert.equal(renderToStaticMarkup(React.createElement(components.LiveAlertBanner, {mode:"preview"})), "");

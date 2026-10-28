@@ -21,7 +21,7 @@ class DeliveryResult:
 
 
 def preview_only():
-    return settings.ALERT_DELIVERY_MODE != 'live' or settings.ALERT_DEBUG_MODE
+    return settings.ALERT_DELIVERY_MODE != 'live' or settings.ALERT_DEBUG_MODE or not getattr(settings, 'ALERT_LIVE_CONFIRMED', True)
 
 
 def alert_fields(data):

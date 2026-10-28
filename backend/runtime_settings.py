@@ -13,6 +13,7 @@ class SavedSettings(BaseModel):
     email_cooldown: int = Field(ge=0, le=86400, strict=True)
     whatsapp_cooldown: int = Field(ge=0, le=86400, strict=True)
     confidence_threshold: float = Field(ge=0, le=1, allow_inf_nan=False, strict=True)
+    frame_skip: int = Field(default=3, ge=1, le=30, strict=True)
     required_ppe: list[Literal['Helmet', 'Safety Vest', 'Face Mask']] = Field(
         default_factory=lambda: ['Helmet', 'Safety Vest', 'Face Mask'], min_length=1, max_length=3)
 
@@ -41,6 +42,7 @@ def read_settings(row, config):
         'email_enabled': config.ENABLE_EMAIL_ALERTS, 'whatsapp_enabled': config.ENABLE_WHATSAPP_ALERTS,
         'email_recipients': config.ALERT_EMAIL_TO, 'whatsapp_recipient': config.ALERT_WHATSAPP_TO,
         'email_cooldown': config.EMAIL_COOLDOWN_SECONDS, 'whatsapp_cooldown': config.WHATSAPP_COOLDOWN_SECONDS,
+        'frame_skip': getattr(config, 'STREAM_DETECTION_INTERVAL', 3),
         'confidence_threshold': config.CONFIDENCE_THRESHOLD, 'required_ppe': list(config.REQUIRED_PPE),
     }
     if row is not None:
@@ -61,6 +63,7 @@ def apply_settings(value, config):
         'email_enabled': 'ENABLE_EMAIL_ALERTS', 'whatsapp_enabled': 'ENABLE_WHATSAPP_ALERTS',
         'email_recipients': 'ALERT_EMAIL_TO', 'whatsapp_recipient': 'ALERT_WHATSAPP_TO',
         'email_cooldown': 'EMAIL_COOLDOWN_SECONDS', 'whatsapp_cooldown': 'WHATSAPP_COOLDOWN_SECONDS',
+        'frame_skip': 'STREAM_DETECTION_INTERVAL',
         'confidence_threshold': 'CONFIDENCE_THRESHOLD', 'required_ppe': 'REQUIRED_PPE',
     }
     for name, setting in mapping.items():

@@ -1,4 +1,8 @@
 """Validated uploads. Sync handlers run in FastAPI's worker pool, not the event loop."""
+try:
+    from observations import record_observation
+except ModuleNotFoundError:
+    from backend.observations import record_observation
 import asyncio
 import json
 import math
@@ -15,7 +19,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, BackgroundTasks, HTTPE
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-from db.models import Violation
+from db.models import Violation, WorkerObservation
 from detection.model import get_detector
 from detection.violation_logic import compute_violations
 from detection.annotator import annotate_frame
@@ -112,6 +116,8 @@ def _notify(payload, screenshot):
 
 
 def _record(db, tasks, source, filename, frame_number, frame, detections, workers, outputs, retained, image=None):
+    record_observation(db, workers, source, WorkerObservation)
+    db.commit()
     pending = [w for w in workers if w['status'] == 'VIOLATION']
     accepted, suppressed = [], 0
     for v in pending:
@@ -186,7 +192,7 @@ def _process_video(path, filename, db, tasks, outputs, retained):
             if not ok:
                 break
             decoded += 1
-            if decoded != 1 and decoded % 3:
+            if decoded != 1 and decoded % settings.STREAM_DETECTION_INTERVAL:
                 continue
             analyzed += 1
             detections = detector.detect(frame)

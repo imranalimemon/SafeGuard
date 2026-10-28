@@ -1,0 +1,95 @@
+{
+  "command": "tools/qa_product.cjs: real image upload followed by GET /api/stats/analytics",
+  "data": {
+    "violations_per_day": [
+      {
+        "date": "2026-08-11",
+        "violations": 10
+      },
+      {
+        "date": "2026-08-24",
+        "violations": 8
+      },
+      {
+        "date": "2026-08-25",
+        "violations": 7
+      },
+      {
+        "date": "2026-10-11",
+        "violations": 19
+      },
+      {
+        "date": "2026-10-14",
+        "violations": 54
+      },
+      {
+        "date": "2026-10-16",
+        "violations": 2
+      },
+      {
+        "date": "2026-10-19",
+        "violations": 6
+      },
+      {
+        "date": "2026-10-27",
+        "violations": 30
+      },
+      {
+        "date": "2026-10-28",
+        "violations": 18
+      }
+    ],
+    "violations_by_source": [
+      {
+        "source": "camera:1",
+        "violations": 103
+      },
+      {
+        "source": "camera:10",
+        "violations": 5
+      },
+      {
+        "source": "camera:3",
+        "violations": 4
+      },
+      {
+        "source": "camera:6",
+        "violations": 7
+      },
+      {
+        "source": "camera:8",
+        "violations": 6
+      },
+      {
+        "source": "image_upload",
+        "violations": 17
+      },
+      {
+        "source": "video_upload",
+        "violations": 12
+      }
+    ],
+    "violations_by_type": {
+      "Helmet": 141,
+      "Safety Vest": 122,
+      "Face Mask": 56
+    },
+    "review_status_counts": {
+      "escalated": 2,
+      "open": 152
+    },
+    "compliance_trend": [
+      {
+        "date": "2026-10-28",
+        "worker_observations": 1,
+        "compliant": 0,
+        "violating": 0,
+        "unknown": 1,
+        "frames_analyzed": 1,
+        "assessed_denominator": 0,
+        "compliance_rate": null
+      }
+    ],
+    "note": "All recorded violations, including archived. Compliance counts sampled worker observations, not unique workers; unknown-only workers are excluded from its denominator. Historical records before observation storage have no compliance denominator."
+  }
+}
