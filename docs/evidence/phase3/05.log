@@ -1,0 +1,14 @@
+COMMAND: C:\Users\imran\AppData\Local\Temp\safeguard-master-6ceo9ejc\venv\Scripts\python.exe -B -m unittest backend.test_reliability
+CWD: I:\AntiGRavity\SafeGuard
+.Accelerator initialization failed; retrying CPU provider.
+..Camera reconnecting (1/1): cannot open camera
+Camera not available: camera stopped returning frames
+.Camera reconnecting (1/2): cannot open camera
+Camera reconnecting (2/2): cannot open camera
+Camera not available: cannot open camera
+Camera reconnecting (1/3): cannot open camera
+..
+----------------------------------------------------------------------
+Ran 6 tests in 0.712s
+
+OK

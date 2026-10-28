@@ -1,0 +1,162 @@
+{
+  "warning": "LEAKAGE WARNING: test/valid images were pooled into the augmentation workflow. Scores are likely optimistic and are not leakage-free generalization evidence; a clean retrain/evaluation is pending.",
+  "ground_truth_warning": "Worker/PPE relations are geometric annotation proxies. Absence assumes exhaustive PPE labels. Ambiguous associations are unknown. Mask absence is assessable ONLY with independent human face-visibility labels; model visibility predictions are never used as truth. These are exploratory proxy scores, not validated compliance accuracy.",
+  "mask_visibility_file": null,
+  "model_sha256": "8a402e16f3fbb966cd804dbc51f0bf94a582b4d1513041fea0874ae72db189d1",
+  "images": 1222,
+  "metrics": {
+    "compliant": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "precision": null,
+      "recall": null
+    },
+    "violation": {
+      "tp": 2648,
+      "fp": 187,
+      "fn": 769,
+      "precision": 0.9340388007054674,
+      "recall": 0.774948785484343
+    }
+  },
+  "counts": {
+    "matched_workers": 3105,
+    "unknown_ground_truth_excluded": 451,
+    "VIOLATION_tp": 2648,
+    "spurious_worker": 189,
+    "VIOLATION_fp": 187,
+    "VIOLATION_fn": 769,
+    "missed_violation": 24,
+    "wrong_ppe:Helmet": 150,
+    "prediction_abstained_on_known_worker": 24,
+    "missed_worker": 763,
+    "wrong_ppe:Safety Vest": 36,
+    "wrong_ppe:Face Mask": 52
+  },
+  "annotation_counts": {
+    "orphan_ppe_annotations": 895,
+    "ambiguous_ppe_annotations": 37,
+    "ground_truth_workers": 3868,
+    "ground_truth_unknown": 451,
+    "mask_ground_truth_unknown": 3383,
+    "ground_truth_violation": 3417
+  },
+  "frequent_errors": [
+    [
+      "missed_worker",
+      763
+    ],
+    [
+      "spurious_worker",
+      189
+    ],
+    [
+      "wrong_ppe:Helmet",
+      150
+    ],
+    [
+      "wrong_ppe:Face Mask",
+      52
+    ],
+    [
+      "wrong_ppe:Safety Vest",
+      36
+    ],
+    [
+      "missed_violation",
+      24
+    ]
+  ],
+  "examples": [
+    {
+      "filename": "chv_val_00003_jpg.rf.caa14bf66739341c9cc211ab72aeea9b.jpg",
+      "image": "error-01-chv_val_00003_jpg.rf.caa14bf66739341c9cc211ab72aeea9b.jpg",
+      "errors": {
+        "matched_workers": 7,
+        "unknown_ground_truth_excluded": 5,
+        "VIOLATION_tp": 2,
+        "spurious_worker": 1,
+        "VIOLATION_fp": 1
+      }
+    },
+    {
+      "filename": "chv_val_00105_jpg.rf.7134775476831de4726b8285592a3ebf.jpg",
+      "image": "error-02-chv_val_00105_jpg.rf.7134775476831de4726b8285592a3ebf.jpg",
+      "errors": {
+        "matched_workers": 4,
+        "VIOLATION_tp": 1,
+        "unknown_ground_truth_excluded": 2,
+        "VIOLATION_fn": 1,
+        "missed_violation": 1,
+        "wrong_ppe:Helmet": 1,
+        "prediction_abstained_on_known_worker": 1
+      }
+    },
+    {
+      "filename": "chv_val_00119_jpg.rf.a8372a5baab6683c575a28d1167703b6.jpg",
+      "image": "error-03-chv_val_00119_jpg.rf.a8372a5baab6683c575a28d1167703b6.jpg",
+      "errors": {
+        "matched_workers": 2,
+        "VIOLATION_tp": 2,
+        "missed_worker": 3,
+        "VIOLATION_fn": 3
+      }
+    },
+    {
+      "filename": "chv_val_00147_jpg.rf.4b793241f7cc4977d63caadd02bbf2b3.jpg",
+      "image": "error-04-chv_val_00147_jpg.rf.4b793241f7cc4977d63caadd02bbf2b3.jpg",
+      "errors": {
+        "matched_workers": 1,
+        "unknown_ground_truth_excluded": 1,
+        "missed_worker": 1,
+        "VIOLATION_fn": 1
+      }
+    },
+    {
+      "filename": "chv_val_00192_jpg.rf.b686d61446f1fa3e62c26f1c00397217.jpg",
+      "image": "error-05-chv_val_00192_jpg.rf.b686d61446f1fa3e62c26f1c00397217.jpg",
+      "errors": {
+        "matched_workers": 1,
+        "VIOLATION_tp": 1,
+        "wrong_ppe:Helmet": 1,
+        "missed_worker": 6,
+        "VIOLATION_fn": 6
+      }
+    },
+    {
+      "filename": "chv_val_00267_jpg.rf.88055b865aafa9b237047b0f98a718ba.jpg",
+      "image": "error-06-chv_val_00267_jpg.rf.88055b865aafa9b237047b0f98a718ba.jpg",
+      "errors": {
+        "matched_workers": 3,
+        "VIOLATION_tp": 3,
+        "missed_worker": 2,
+        "VIOLATION_fn": 2
+      }
+    },
+    {
+      "filename": "chv_val_00286_jpg.rf.f23fcf0206c4c7e84d346f91be26d078.jpg",
+      "image": "error-07-chv_val_00286_jpg.rf.f23fcf0206c4c7e84d346f91be26d078.jpg",
+      "errors": {
+        "matched_workers": 6,
+        "VIOLATION_tp": 6,
+        "wrong_ppe:Helmet": 5,
+        "missed_worker": 2,
+        "VIOLATION_fn": 2
+      }
+    },
+    {
+      "filename": "chv_val_00395_jpg.rf.c1e931dd0d3f5156c6177e8365c8ad9b.jpg",
+      "image": "error-08-chv_val_00395_jpg.rf.c1e931dd0d3f5156c6177e8365c8ad9b.jpg",
+      "errors": {
+        "matched_workers": 5,
+        "VIOLATION_tp": 5,
+        "wrong_ppe:Helmet": 2,
+        "missed_worker": 1,
+        "VIOLATION_fn": 1
+      }
+    }
+  ],
+  "cache_source": "docs\\evidence\\phase3\\valid\\predictions.json",
+  "command": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\venv\\Scripts\\python.exe -B backend/tools/violation_eval.py --predictions docs/evidence/phase3/valid/predictions.json --output docs/evidence/phase3/valid-workers"
+}
