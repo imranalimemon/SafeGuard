@@ -54,7 +54,7 @@ assert.doesNotMatch(html, /Jetson|Orin|YOLOv8s/);
 html = render('Footer', online);
 assert.match(html, /Online/);
 assert.match(html, /custom_ppe\.onnx/);
-assert.doesNotMatch(html, /href="#"|Help Desk|Safety Protocols|System Logs/);
+assert.doesNotMatch(html, /href="#"|Help Desk/);
 assert.match(html, /CUDAExecutionProvider, CPUExecutionProvider/);
 assert.match(render('Footer', { ...online, state: 'degraded', db_connected: false }), /Degraded/);
 console.log('PASS: footer reflects offline/degraded/online health and supplied model/provider.');
@@ -161,3 +161,6 @@ assert.match(html, /for="login-password"/);
 assert.match(html, /role="alert"/);
 assert.match(html, /disabled=""/);
 console.log('PASS: login has labelled password fields, error status and busy state.');
+
+assert.match(render("Footer", online), /href="\/logs"/);
+assert.match(render("Footer", online), /href="\/help"/);

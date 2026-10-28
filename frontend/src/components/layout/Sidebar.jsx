@@ -3,6 +3,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useSystemHealth } from '../../context/SystemHealth';
 
 const NAV_LINKS = [
+  { name: 'System Logs', path: '/logs', icon: 'list_alt' },
+  { name: 'Help', path: '/help', icon: 'help' },
   { name: 'Dashboard',     path: '/',          icon: 'dashboard',       end: true  },
   { name: 'Violations',    path: '/violations', icon: 'warning'                     },
   { name: 'Cameras',       path: '/cameras',    icon: 'videocam'                    },

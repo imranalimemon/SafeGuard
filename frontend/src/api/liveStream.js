@@ -42,6 +42,12 @@ export function createLiveStream({ openSocket, onState, setTimer = setTimeout, c
         try {
           const data = JSON.parse(event.data);
           if (data.error) { fail(data.error); return; }
+          if (data.status?.startsWith('reconnecting')) {
+            frameId = frameKey = null;
+            onState({ isStreaming: true, frame: null, stats: null, error: data.message || 'Camera reconnecting...' });
+            watch();
+            return;
+          }
           if (data.frame) {
             frameId = data.frame_id;
             frameKey = `${connectionId}:${frameId}`;

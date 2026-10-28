@@ -1,0 +1,28 @@
+{
+  "model_sha256": "8a402e16f3fbb966cd804dbc51f0bf94a582b4d1513041fea0874ae72db189d1",
+  "providers": [
+    "CPUExecutionProvider"
+  ],
+  "input_video": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\assets\\workers.mp4",
+  "source_fps": 15.0,
+  "frames_delivered": 120,
+  "frame_skip": 3,
+  "detector_ms": {
+    "samples": 28,
+    "mean": 258.2484714262786,
+    "p95": 293.98740000033285
+  },
+  "delivered_fps": 14.887397480251266,
+  "frame_age_ms": {
+    "samples": 120,
+    "mean": 14.049722500203643,
+    "p95": 22.608400002354756
+  },
+  "preview_alert_ms": {
+    "samples": 16,
+    "mean": 25.232262501049263,
+    "p95": 158.40960000059567
+  },
+  "method": "One warm-up excluded. Paced file replay; actual latest-frame/ACK/JPEG pipeline with an immediate local ACK sink. Excludes browser/network display latency. Preview MIME construction with real detected-violation screenshot; no DB or transports.",
+  "command": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\venv\\Scripts\\python.exe -B backend/tools/benchmark.py --video C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\assets\\workers.mp4 --frames 120 --output docs/evidence/phase2/benchmark"
+}

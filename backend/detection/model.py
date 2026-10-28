@@ -4,6 +4,10 @@ import onnxruntime as ort
 from typing import List, Dict, Tuple
 from pathlib import Path
 from threading import Lock
+try:
+    from .providers import create_session
+except ImportError:
+    from backend.detection.providers import create_session
 
 from config import settings
 
@@ -27,7 +31,7 @@ class PPEDetector:
             model_path = str((backend_dir / settings.MODEL_PATH).resolve())
             
         self.model_path = model_path
-        self.session = ort.InferenceSession(self.model_path, providers=['CPUExecutionProvider'])
+        self.session = create_session(ort, self.model_path)
         
         model_inputs = self.session.get_inputs()
         self.input_name = model_inputs[0].name

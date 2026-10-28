@@ -2,6 +2,7 @@
 import asyncio
 import base64
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 from typing import List
@@ -18,6 +19,7 @@ from detection.annotator import annotate_frame
 from detection.deduplicator import deduplicator
 from detection.model import get_detector
 from detection.violation_logic import compute_violations
+from . import registry
 from .live import LatestFrameStream, send_latest
 
 router = APIRouter()
@@ -205,12 +207,20 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
         stream = LatestFrameStream(
             lambda: _build_capture(camera), analyze,
             interval=settings.STREAM_DETECTION_INTERVAL, on_result=record,
+            reconnect_attempts=getattr(settings, "STREAM_RECONNECT_ATTEMPTS", 0),
         ).start()
-        await send_latest(websocket, stream, lambda frame, result: _stream_packet(camera, frame, result))
+        registry.register(camera.id, stream)
+        async def authorized():
+            # Test sockets have no ASGI scope; production sockets always do.
+            if not hasattr(websocket, 'scope'):
+                return True
+            token = websocket.scope.get('state', {}).get('session_token', '')
+            return bool(await asyncio.to_thread(websocket.app.state.auth.lookup, token))
+        await send_latest(websocket, stream, lambda frame, result: _stream_packet(camera, frame, result), authorized=authorized)
     except WebSocketDisconnect:
         pass
     except Exception as exc:
-        print(f"[WS] {exc}")
+        logging.getLogger("safeguard.stream").warning("Stream failed (%s)", type(exc).__name__)
         try:
             safe_errors = {
                 "Camera not available: cannot open camera",
@@ -218,6 +228,7 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
                 "Camera not available: capture failed",
                 "Camera not available: frame delivery timed out",
                 "Camera processing failed. Check the system log.",
+                "Session expired. Sign in again.",
             }
             message = str(exc) if str(exc) in safe_errors else "Camera not available: processing failed. Check the system log."
             await websocket.send_json({"error": message})
@@ -227,4 +238,5 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
     finally:
         manager.disconnect(websocket)
         if stream is not None:
+            registry.discard(stream)
             await stream.close()

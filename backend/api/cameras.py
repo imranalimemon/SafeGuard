@@ -93,7 +93,9 @@ class CameraOut(BaseModel):
 
 def _serialize(c: Camera) -> dict:
     """CameraOut with `created_at` rendered as ISO string (matches ViolationOut style)."""
+    from websocket.registry import status
     return {
+        "stream_status": status(c.id),
         "id": c.id,
         "name": c.name,
         "source_type": c.source_type,

@@ -38,6 +38,8 @@ def initialize_storage():
 
 @asynccontextmanager
 async def lifespan(app):
+    from logging_setup import configure_logging
+    app.state.log_handler = configure_logging(settings)
     await run_in_threadpool(initialize_storage)
     await startup_event()
     await run_in_threadpool(auth_service.bootstrap)
@@ -69,6 +71,8 @@ os.makedirs(settings.SCREENSHOT_DIR, exist_ok=True)
 # Evidence routes are protected by the same session middleware as the API.
 app.include_router(auth_router)
 app.include_router(evidence_router)
+from api.system import router as system_router
+app.include_router(system_router)
 
 # Include routers
 app.include_router(health.router)
@@ -99,7 +103,13 @@ async def startup_event():
 
 
 async def shutdown_event():
+    from websocket.registry import shutdown
+    await shutdown()
     await run_in_threadpool(engine.dispose)
+    handler = getattr(app.state, 'log_handler', None)
+    if handler:
+        logging.getLogger().removeHandler(handler)
+        handler.close()
 
 
 @app.exception_handler(RequestValidationError)

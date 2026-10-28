@@ -16,6 +16,7 @@ const Footer = () => {
       &nbsp;|&nbsp;Model: {health.model_name ?? 'Not available'}
       &nbsp;|&nbsp;Provider: {health.execution_providers?.join(', ') || 'Not available'}
     </div>
+    <nav className="flex gap-3 text-xs"><a href="/logs">System Logs</a><a href="/help">Safety Protocols</a></nav>
   </footer>
 );
 };

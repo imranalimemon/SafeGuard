@@ -94,6 +94,7 @@ export const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, test
         </div>
         <div className="flex flex-col gap-1 items-end">
           <StatusBadge enabled={camera.enabled} />
+          <span className="text-xs">Stream: {camera.stream_status || "idle"}</span>
           {camera.source_type && <TypeBadge type={camera.source_type} />}
         </div>
       </div>

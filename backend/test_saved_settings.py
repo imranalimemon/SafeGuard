@@ -134,6 +134,7 @@ class SavedSettingsTests(unittest.TestCase):
         ws = ModuleType('websocket'); ws.__path__ = []
         modules = {'config': config, 'api': api, 'db': db, 'db.database': self.database,
                    'db.models': self.models, 'runtime_settings': runtime_settings,
+                   'api.system': type('SystemModule', (), {'router': APIRouter()})(),
                    'websocket': ws, 'websocket.manager': type('WSModule', (), {'router': APIRouter()})()}
         with patch.dict(sys.modules, modules), patch.object(sys, 'path', sys.path.copy()), contextlib.redirect_stdout(io.StringIO()):
             main = load_source('isolated_startup_app', BACKEND / 'main.py')

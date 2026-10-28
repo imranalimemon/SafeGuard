@@ -126,3 +126,16 @@ test('HTTP 200 body ok:false is failure and preserves actual error message', () 
     ok: true, message: 'Opened webcam 0',
   });
 });
+
+test('reconnecting status clears stale image and preserves connection until recovery', () => {
+  const h = harness(); h.stream.start('1');
+  h.sockets[0].message({ frame: 'first', frame_id: 1 });
+  h.sockets[0].message({ status: 'reconnecting (1/3)', message: 'Camera reconnecting.' });
+  assert.equal(h.state().frame, null);
+  assert.equal(h.state().isStreaming, true);
+  assert.equal(h.sockets[0].closed, false);
+  assert.equal(h.timers.size, 1);
+  h.sockets[0].message({ frame: 'recovered', frame_id: 2 });
+  assert.equal(h.state().error, null);
+  assert.equal(h.state().frame, 'data:image/jpeg;base64,recovered');
+});

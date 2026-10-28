@@ -9,6 +9,8 @@ import CamerasPage from './pages/CamerasPage';
 import UploadPage from './pages/UploadPage';
 import SettingsPage from './pages/SettingsPage';
 import { SystemHealthProvider } from './context/SystemHealth';
+import SystemLogsPage from './pages/SystemLogsPage';
+import HelpPage from './pages/HelpPage';
 import AuthGate from './context/Auth';
 
 function App() {
@@ -39,6 +41,8 @@ function App() {
           <Route path="/cameras"    element={<CamerasPage />} />
           <Route path="/upload"     element={<UploadPage />} />
           <Route path="/settings"   element={<SettingsPage />} />
+          <Route path="/logs" element={<SystemLogsPage />} />
+          <Route path="/help" element={<HelpPage />} />
         </Routes>
       </main>
 

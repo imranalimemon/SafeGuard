@@ -33,6 +33,8 @@ class Settings:
     IOU_THRESHOLD: float = float(os.getenv("IOU_THRESHOLD", "0.45"))
     # Inference sampling only; does not change detector thresholds or PPE rules.
     STREAM_DETECTION_INTERVAL: int = max(1, int(os.getenv("STREAM_DETECTION_INTERVAL", "3")))
+    STREAM_RECONNECT_ATTEMPTS: int = min(10, max(0, int(os.getenv('STREAM_RECONNECT_ATTEMPTS', '3'))))
+    LOG_DIR: str = os.getenv('LOG_DIR', str(Path(__file__).parent / 'logs'))
     VIOLATION_IOU_THRESHOLD: float = float(os.getenv("VIOLATION_IOU_THRESHOLD", "0.3"))
     NUM_CLASSES: int = int(os.getenv("NUM_CLASSES", "4"))
     CLASS_NAMES: dict = {

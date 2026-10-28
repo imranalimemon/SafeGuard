@@ -1,0 +1,10 @@
+{
+  "command": "node tools/qa_reliability.cjs <Playwright directory> <temporary auth.json>",
+  "annotated_video_stream": "pass",
+  "camera_switch_to_failure": "pass",
+  "reconnect_status_clears_frame": "pass",
+  "switch_back_recovers": "pass",
+  "real_logs": "pass",
+  "help": "pass",
+  "page_errors": []
+}

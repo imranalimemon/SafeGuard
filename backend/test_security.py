@@ -20,6 +20,7 @@ class SecurityTests(unittest.TestCase):
         cls.env = patch.dict(os.environ, {
             'DATABASE_URL': f'sqlite:///{root / "test.db"}',
             'SCREENSHOT_DIR': str(root / 'evidence'),
+            'LOG_DIR': str(root / 'logs'),
             'SAFEGUARD_ADMIN_PASSWORD': cls.password,
             'SAFEGUARD_CREDENTIAL_KEY': cls.key,
             'ALERT_DELIVERY_MODE': 'preview',

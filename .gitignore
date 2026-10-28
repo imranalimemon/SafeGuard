@@ -37,3 +37,6 @@ Thumbs.db
 .env
 
 training_artifacts/
+
+# Rotated runtime logs (reports under docs/evidence are retained)
+backend/logs/
