@@ -168,3 +168,6 @@ assert.match(render("Footer", online), /href="\/help"/);
 
 assert.match(renderToStaticMarkup(React.createElement(components.LiveAlertBanner, {mode:"live"})), /LIVE ALERTS ENABLED/);
 assert.equal(renderToStaticMarkup(React.createElement(components.LiveAlertBanner, {mode:"preview"})), "");
+
+const settingsIds = [...render("Settings", online).matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+assert.equal(new Set(settingsIds).size, settingsIds.length, "Settings field IDs must be unique across alert panels");

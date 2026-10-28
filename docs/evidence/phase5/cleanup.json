@@ -1,0 +1,7 @@
+﻿{
+    "listening_ports":  [
+
+                        ],
+    "command":  "Get-NetTCPConnection -LocalPort 8000,5173,8001 -State Listen",
+    "owned_qa_services_stopped":  true
+}

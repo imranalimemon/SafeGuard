@@ -1,0 +1,1108 @@
+{
+  "results": [
+    {
+      "area": "01-dashboard-health-stats",
+      "result": "PASS",
+      "detail": {
+        "health": {
+          "status": "ok",
+          "model_loaded": true,
+          "db_connected": true,
+          "model_name": "best.onnx",
+          "execution_providers": [
+            "CPUExecutionProvider"
+          ],
+          "email_enabled": false,
+          "whatsapp_enabled": false,
+          "alert_delivery_mode": "preview",
+          "smtp_configured": null,
+          "smtp_configuration_error": null,
+          "smtp_status_note": "Configuration check only; network reachability and authentication are not tested."
+        },
+        "stats": {
+          "total_violations": 154,
+          "today_violations": 18,
+          "total_persons_detected": null,
+          "compliance_rate": null,
+          "avg_confidence": 0.7434776904118526,
+          "violations_by_type": {
+            "Helmet": 141,
+            "Face Mask": 56,
+            "Safety Vest": 122
+          },
+          "recent_violations": [
+            {
+              "id": 153,
+              "timestamp": "2026-10-28T07:30:32.725150",
+              "violation_type": "Missing: Helmet",
+              "person_count": 7,
+              "violation_count": 4,
+              "screenshot_path": "/screenshots/f1a45726-65f8-4517-971b-5d93ec291c07.jpg",
+              "confidence": 0.735,
+              "alert_sent": false,
+              "missing_ppe": "Helmet",
+              "details": "Live camera: QA replay 1793172620421 (unknown location)",
+              "source": "camera:10",
+              "review_status": "open",
+              "acknowledged_at": null,
+              "escalated_at": null,
+              "archived_at": null,
+              "mask_assessment": "not assessable",
+              "bbox": [
+                382,
+                70,
+                465,
+                454
+              ],
+              "detections": [
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.858,
+                  "bbox": [
+                    385,
+                    149,
+                    474,
+                    296
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8221,
+                  "bbox": [
+                    83,
+                    162,
+                    137,
+                    249
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8191,
+                  "bbox": [
+                    138,
+                    118,
+                    199,
+                    384
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.814,
+                  "bbox": [
+                    502,
+                    128,
+                    578,
+                    425
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8135,
+                  "bbox": [
+                    81,
+                    115,
+                    137,
+                    387
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8068,
+                  "bbox": [
+                    140,
+                    165,
+                    197,
+                    249
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8006,
+                  "bbox": [
+                    209,
+                    172,
+                    257,
+                    257
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.7785,
+                  "bbox": [
+                    258,
+                    169,
+                    310,
+                    251
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.773,
+                  "bbox": [
+                    206,
+                    122,
+                    258,
+                    387
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7437,
+                  "bbox": [
+                    256,
+                    123,
+                    306,
+                    379
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7348,
+                  "bbox": [
+                    382,
+                    70,
+                    465,
+                    454
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.7173,
+                  "bbox": [
+                    316,
+                    170,
+                    347,
+                    245
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.6801,
+                  "bbox": [
+                    337,
+                    83,
+                    394,
+                    448
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.6392,
+                  "bbox": [
+                    479,
+                    160,
+                    518,
+                    217
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5824,
+                  "bbox": [
+                    210,
+                    121,
+                    249,
+                    167
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.52,
+                  "bbox": [
+                    261,
+                    121,
+                    298,
+                    164
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.5073,
+                  "bbox": [
+                    341,
+                    158,
+                    389,
+                    250
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5002,
+                  "bbox": [
+                    139,
+                    118,
+                    178,
+                    164
+                  ]
+                }
+              ]
+            },
+            {
+              "id": 152,
+              "timestamp": "2026-10-28T07:30:32.717917",
+              "violation_type": "Missing: Helmet",
+              "person_count": 7,
+              "violation_count": 4,
+              "screenshot_path": "/screenshots/f1a45726-65f8-4517-971b-5d93ec291c07.jpg",
+              "confidence": 0.813,
+              "alert_sent": false,
+              "missing_ppe": "Helmet",
+              "details": "Live camera: QA replay 1793172620421 (unknown location)",
+              "source": "camera:10",
+              "review_status": "open",
+              "acknowledged_at": null,
+              "escalated_at": null,
+              "archived_at": null,
+              "mask_assessment": "not assessable",
+              "bbox": [
+                81,
+                115,
+                137,
+                387
+              ],
+              "detections": [
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.858,
+                  "bbox": [
+                    385,
+                    149,
+                    474,
+                    296
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8221,
+                  "bbox": [
+                    83,
+                    162,
+                    137,
+                    249
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8191,
+                  "bbox": [
+                    138,
+                    118,
+                    199,
+                    384
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.814,
+                  "bbox": [
+                    502,
+                    128,
+                    578,
+                    425
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8135,
+                  "bbox": [
+                    81,
+                    115,
+                    137,
+                    387
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8068,
+                  "bbox": [
+                    140,
+                    165,
+                    197,
+                    249
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8006,
+                  "bbox": [
+                    209,
+                    172,
+                    257,
+                    257
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.7785,
+                  "bbox": [
+                    258,
+                    169,
+                    310,
+                    251
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.773,
+                  "bbox": [
+                    206,
+                    122,
+                    258,
+                    387
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7437,
+                  "bbox": [
+                    256,
+                    123,
+                    306,
+                    379
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7348,
+                  "bbox": [
+                    382,
+                    70,
+                    465,
+                    454
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.7173,
+                  "bbox": [
+                    316,
+                    170,
+                    347,
+                    245
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.6801,
+                  "bbox": [
+                    337,
+                    83,
+                    394,
+                    448
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.6392,
+                  "bbox": [
+                    479,
+                    160,
+                    518,
+                    217
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5824,
+                  "bbox": [
+                    210,
+                    121,
+                    249,
+                    167
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.52,
+                  "bbox": [
+                    261,
+                    121,
+                    298,
+                    164
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.5073,
+                  "bbox": [
+                    341,
+                    158,
+                    389,
+                    250
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5002,
+                  "bbox": [
+                    139,
+                    118,
+                    178,
+                    164
+                  ]
+                }
+              ]
+            },
+            {
+              "id": 151,
+              "timestamp": "2026-10-28T07:30:32.709246",
+              "violation_type": "Missing: Helmet",
+              "person_count": 7,
+              "violation_count": 4,
+              "screenshot_path": "/screenshots/f1a45726-65f8-4517-971b-5d93ec291c07.jpg",
+              "confidence": 0.814,
+              "alert_sent": false,
+              "missing_ppe": "Helmet",
+              "details": "Live camera: QA replay 1793172620421 (unknown location)",
+              "source": "camera:10",
+              "review_status": "open",
+              "acknowledged_at": null,
+              "escalated_at": null,
+              "archived_at": null,
+              "mask_assessment": "not assessable",
+              "bbox": [
+                502,
+                128,
+                578,
+                425
+              ],
+              "detections": [
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.858,
+                  "bbox": [
+                    385,
+                    149,
+                    474,
+                    296
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8221,
+                  "bbox": [
+                    83,
+                    162,
+                    137,
+                    249
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8191,
+                  "bbox": [
+                    138,
+                    118,
+                    199,
+                    384
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.814,
+                  "bbox": [
+                    502,
+                    128,
+                    578,
+                    425
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8135,
+                  "bbox": [
+                    81,
+                    115,
+                    137,
+                    387
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8068,
+                  "bbox": [
+                    140,
+                    165,
+                    197,
+                    249
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.8006,
+                  "bbox": [
+                    209,
+                    172,
+                    257,
+                    257
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.7785,
+                  "bbox": [
+                    258,
+                    169,
+                    310,
+                    251
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.773,
+                  "bbox": [
+                    206,
+                    122,
+                    258,
+                    387
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7437,
+                  "bbox": [
+                    256,
+                    123,
+                    306,
+                    379
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7348,
+                  "bbox": [
+                    382,
+                    70,
+                    465,
+                    454
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.7173,
+                  "bbox": [
+                    316,
+                    170,
+                    347,
+                    245
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.6801,
+                  "bbox": [
+                    337,
+                    83,
+                    394,
+                    448
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.6392,
+                  "bbox": [
+                    479,
+                    160,
+                    518,
+                    217
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5824,
+                  "bbox": [
+                    210,
+                    121,
+                    249,
+                    167
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.52,
+                  "bbox": [
+                    261,
+                    121,
+                    298,
+                    164
+                  ]
+                },
+                {
+                  "class_id": 3,
+                  "class_name": "Safety Vest",
+                  "confidence": 0.5073,
+                  "bbox": [
+                    341,
+                    158,
+                    389,
+                    250
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5002,
+                  "bbox": [
+                    139,
+                    118,
+                    178,
+                    164
+                  ]
+                }
+              ]
+            },
+            {
+              "id": 150,
+              "timestamp": "2026-10-28T07:30:26.908135",
+              "violation_type": "Missing: Safety Vest",
+              "person_count": 1,
+              "violation_count": 1,
+              "screenshot_path": "/screenshots/20bbf59d-bd2c-4b3a-8f7a-e86e489e89f8.jpg",
+              "confidence": 0.763,
+              "alert_sent": false,
+              "missing_ppe": "Safety Vest",
+              "details": "Live camera: QA replay 1793172620421 (unknown location)",
+              "source": "camera:10",
+              "review_status": "open",
+              "acknowledged_at": null,
+              "escalated_at": null,
+              "archived_at": null,
+              "mask_assessment": "not assessable",
+              "bbox": [
+                196,
+                116,
+                423,
+                465
+              ],
+              "detections": [
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.7626,
+                  "bbox": [
+                    196,
+                    116,
+                    423,
+                    465
+                  ]
+                },
+                {
+                  "class_id": 1,
+                  "class_name": "Helmet",
+                  "confidence": 0.5962,
+                  "bbox": [
+                    255,
+                    117,
+                    361,
+                    258
+                  ]
+                }
+              ]
+            },
+            {
+              "id": 149,
+              "timestamp": "2026-10-28T07:29:36.118142",
+              "violation_type": "Missing: Helmet, Safety Vest",
+              "person_count": 1,
+              "violation_count": 1,
+              "screenshot_path": "/screenshots/5e998bbb-cc82-4100-9437-58f537506b0c.jpg",
+              "confidence": 0.889,
+              "alert_sent": false,
+              "missing_ppe": "Helmet, Safety Vest",
+              "details": "Live camera: QA replay 1793172556496 (unknown location)",
+              "source": "camera:8",
+              "review_status": "open",
+              "acknowledged_at": null,
+              "escalated_at": null,
+              "archived_at": null,
+              "mask_assessment": "detected",
+              "bbox": [
+                156,
+                144,
+                387,
+                480
+              ],
+              "detections": [
+                {
+                  "class_id": 0,
+                  "class_name": "Face Mask",
+                  "confidence": 0.9246,
+                  "bbox": [
+                    202,
+                    207,
+                    331,
+                    360
+                  ]
+                },
+                {
+                  "class_id": 2,
+                  "class_name": "Person",
+                  "confidence": 0.8889,
+                  "bbox": [
+                    156,
+                    144,
+                    387,
+                    480
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "evidence": "docs/screenshots/qa-01-dashboard-health-stats.png"
+    },
+    {
+      "area": "03-camera-add",
+      "result": "PASS",
+      "detail": {
+        "stream_status": "idle",
+        "id": 12,
+        "name": "Master QA Camera A 1793178429",
+        "source_type": "ip",
+        "url": "http://127.0.0.1:8001/camera-a.mjpg",
+        "has_credentials": false,
+        "location": "",
+        "enabled": true,
+        "created_at": "2026-10-28T09:17:38.061853"
+      },
+      "evidence": "docs/screenshots/qa-03-camera-add.png"
+    },
+    {
+      "area": "04-camera-test-success",
+      "result": "PASS",
+      "detail": {
+        "ok": true,
+        "message": "Camera 'Master QA Camera A 1793178429' opened successfully"
+      },
+      "evidence": "docs/screenshots/qa-04-camera-test-success.png"
+    },
+    {
+      "area": "05-camera-edit",
+      "result": "PASS",
+      "detail": {
+        "stream_status": "idle",
+        "id": 12,
+        "name": "Master QA Camera A 1793178429 edited",
+        "source_type": "ip",
+        "url": "http://127.0.0.1:8001/camera-a.mjpg",
+        "has_credentials": false,
+        "location": "Local video fixture",
+        "enabled": true,
+        "created_at": "2026-10-28T09:17:38.061853"
+      },
+      "evidence": "docs/screenshots/qa-05-camera-edit.png"
+    },
+    {
+      "area": "07-camera-enabled-toggle",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-07-camera-enabled-toggle.png"
+    },
+    {
+      "area": "08-camera-second-source",
+      "result": "PASS",
+      "detail": {
+        "stream_status": "idle",
+        "id": 13,
+        "name": "Master QA Camera B 1793178429",
+        "source_type": "ip",
+        "url": "http://127.0.0.1:8001/camera-b.mjpg",
+        "has_credentials": false,
+        "location": "",
+        "enabled": true,
+        "created_at": "2026-10-28T09:17:41.284860"
+      },
+      "evidence": "docs/screenshots/qa-08-camera-second-source.png"
+    },
+    {
+      "area": "09-camera-failing-test",
+      "result": "PASS",
+      "detail": {
+        "ok": false,
+        "message": "Could not open camera 'Master QA unavailable 1793178429'. Check the URL/index."
+      },
+      "evidence": "docs/screenshots/qa-09-camera-failing-test.png"
+    },
+    {
+      "area": "10-discovery-modal-ui-only",
+      "result": "PASS",
+      "detail": "Synthetic discovery response; no real webcam/LAN probe was tested",
+      "evidence": "docs/screenshots/qa-10-discovery-modal-ui-only.png"
+    },
+    {
+      "area": "11-live-camera-a",
+      "result": "PASS",
+      "detail": [
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 18
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/13",
+          "closed": true,
+          "frames": 19
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/14",
+          "closed": true,
+          "frames": 1
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 1
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 1
+        }
+      ],
+      "evidence": "docs/screenshots/qa-11-live-camera-a.png"
+    },
+    {
+      "area": "12-live-camera-switch",
+      "result": "PASS",
+      "detail": [
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 18
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/13",
+          "closed": true,
+          "frames": 19
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/14",
+          "closed": true,
+          "frames": 1
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 1
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 1
+        }
+      ],
+      "evidence": "docs/screenshots/qa-12-live-camera-switch.png"
+    },
+    {
+      "area": "13-live-failing-camera",
+      "result": "PASS",
+      "detail": [
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 18
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/13",
+          "closed": true,
+          "frames": 19
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/14",
+          "closed": true,
+          "frames": 1
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 1
+        },
+        {
+          "url": "ws://127.0.0.1:5173/ws/stream/12",
+          "closed": true,
+          "frames": 1
+        }
+      ],
+      "evidence": "docs/screenshots/qa-13-live-failing-camera.png"
+    },
+    {
+      "area": "14-live-stop-restart",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-14-live-stop-restart.png"
+    },
+    {
+      "area": "15-camera-delete-cancel-confirm",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-15-camera-delete-cancel-confirm.png"
+    },
+    {
+      "area": "16-violations-source-column",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-16-violations-source-column.png"
+    },
+    {
+      "area": "17-violations-pagination",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-17-violations-pagination.png"
+    }
+  ],
+  "telemetry": [
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/stats/analytics",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "01-dashboard-health-stats",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "01-dashboard-health-stats",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "01-dashboard-health-stats",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/stats/analytics",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "10-discovery-modal-ui-only",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/stats/analytics",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "ws": [
+    {
+      "url": "ws://127.0.0.1:5173/ws/stream/12",
+      "closed": true,
+      "frames": 18
+    },
+    {
+      "url": "ws://127.0.0.1:5173/ws/stream/13",
+      "closed": true,
+      "frames": 19
+    },
+    {
+      "url": "ws://127.0.0.1:5173/ws/stream/14",
+      "closed": true,
+      "frames": 1
+    },
+    {
+      "url": "ws://127.0.0.1:5173/ws/stream/12",
+      "closed": true,
+      "frames": 1
+    },
+    {
+      "url": "ws://127.0.0.1:5173/ws/stream/12",
+      "closed": true,
+      "frames": 1
+    }
+  ],
+  "cameras": {
+    "a": {
+      "stream_status": "idle",
+      "id": 12,
+      "name": "Master QA Camera A 1793178429 edited",
+      "source_type": "ip",
+      "url": "http://127.0.0.1:8001/camera-a.mjpg",
+      "has_credentials": false,
+      "location": "Local video fixture",
+      "enabled": true,
+      "created_at": "2026-10-28T09:17:38.061853"
+    },
+    "b": {
+      "stream_status": "idle",
+      "id": 13,
+      "name": "Master QA Camera B 1793178429",
+      "source_type": "ip",
+      "url": "http://127.0.0.1:8001/camera-b.mjpg",
+      "has_credentials": false,
+      "location": "",
+      "enabled": true,
+      "created_at": "2026-10-28T09:17:41.284860"
+    },
+    "f": {
+      "stream_status": "idle",
+      "id": 14,
+      "name": "Master QA unavailable 1793178429",
+      "source_type": "ip",
+      "url": "rtsp://127.0.0.1:1/x",
+      "has_credentials": false,
+      "location": "",
+      "enabled": true,
+      "created_at": "2026-10-28T09:17:41.980114"
+    }
+  },
+  "command": "node tools/qa_final_live.cjs <Playwright-directory> <temporary-auth.json>"
+}

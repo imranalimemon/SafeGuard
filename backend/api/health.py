@@ -31,6 +31,7 @@ def health():
         from alerts.email_service import smtp_configuration
         smtp = smtp_configuration()  # Configuration only: no connection/login/send.
     return {
+        "demo_label": getattr(settings, "DEMO_LABEL", None),
         "status": "ok" if model_loaded and db_connected else "degraded",
         "model_loaded": model_loaded,
         "db_connected": db_connected,

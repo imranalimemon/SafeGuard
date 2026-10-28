@@ -1,67 +1,18 @@
-# Frontend implementation
+﻿# Frontend
 
-## Stack and transport
+React 18 + Vite use a same-origin proxy for `/api`, `/ws` and `/screenshots`. `AuthGate` checks the session before mounting the app; login obtains the CSRF token, and logout revokes the session. Cancelled session checks cannot overwrite a newer login.
 
-React 18, React Router, Vite, Tailwind CSS, Axios, native browser WebSocket, jsPDF and jspdf-autotable. State is managed through React hooks and `context/SystemHealth.jsx`. The UI obtains real model/provider identity from backend health; unavailable values are shown as unavailable, not invented counts or hardware readings.
+- **Dashboard:** real backend/model/DB health, actual model/provider, configured camera selection, annotated stream, current worker statuses, DB incident log and observation-based historical analytics. Unavailable values stay unavailable; there are no invented site/camera/hardware counts.
+- **Cameras:** add/edit/test/delete camera configuration. Tests use the returned `ok` flag/message. Credential inputs are write-only; blank edits retain secrets. Active connection state is reported separately from the enabled configuration flag.
+- **Violations:** date/PPE/source camera/review/archived filters, pagination, evidence/details, acknowledgement/escalation/archive, exact email preview, filtered CSV and PDF. There is no record-deletion control or violation DELETE route.
+- **Upload:** real image/video schemas, workers and per-PPE statuses, created records/cooldown suppression, annotation downloads, sampled video summaries/key frames, clear busy/error states and extension/size checks backed by server validation.
+- **Settings:** saved recipients/toggles/cooldowns/PPE/confidence/frame interval, email preview and gated live delivery. Test-send controls are disabled in preview with an explanation. The header marks actual live delivery.
+- **Logs/Help:** genuine authenticated operational log lines and actual safety/operation guidance.
 
-Run the root launcher after the [clean-machine setup](../README.md#clean-machine-setup), or start only the frontend:
+The browser draws no detection boxes over the backend JPEG; it acknowledges an image only after display. Camera switching closes the previous socket and rejects late callbacks. Reconnect messages clear stale frames and keep the watchdog informed.
 
-```bash
-npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173 --strictPort
-```
+PDF charts use the exported filtered records, not Dashboard totals. Evidence failures produce explicit unavailable messages. CSV escapes text/formulas. Exports use GET results only.
 
-`vite.config.js` proxies `/api`, `/screenshots` and `/ws`. It reads `VITE_BACKEND_URL` from the Vite process environment (default `http://localhost:8000`). The combined launchers explicitly use `http://127.0.0.1:8000`. For a remote backend, start Vite separately with the matching `VITE_BACKEND_URL`; direct cross-origin clients also need the backend's appropriate `ALLOWED_ORIGINS`.
+Responsive screenshots at 1366x768, 1920x1080 and 820x1180: [phase 4 evidence](evidence/phase4/browser.json). Dialogs support focus trapping/Escape/return focus, controls have basic labels, and focus outlines are visible. This is not formal accessibility certification. Previously external Google font requests caused QA load timeouts. Font assets and licenses are now bundled under `frontend/public/fonts/`; the app serves them locally with fallback fonts. A production deployment should serve its asset bundle over HTTPS, not expose Vite's development server.
 
-## Pages and states
-
-| Route | Behaviour |
-|---|---|
-| `/` | Selected camera feed, real live worker/violation/compliance data, recorded counts and recent unarchived incidents |
-| `/cameras` | Actual camera CRUD, enabled/disabled state, capture test and discovery; a camera being enabled is not proof it is online |
-| `/violations` | Date/PPE/camera/review filters, pagination, archived-only view, evidence detail, review actions and CSV/PDF exports |
-| `/upload` | Client validation using backend limits, sequential queue, upload percentage/busy analysis state, results and downloads |
-| `/settings` | Saved confidence, required PPE, alert recipients/toggles/cooldowns, delivery-mode/SMTP configuration display, preview and manual test actions |
-
-No emergency-stop, PTZ, dead footer links or unsupported resolution/FPS controls are displayed. Camera resolution/FPS are not saved/applied by the current schema. The footer shows backend model/provider identity and actual health.
-
-## Live view
-
-`api/liveStream.js` owns one socket. A selection change closes it, invalidates callbacks/timers and clears the frame/statistics before connecting to `/ws/stream/{id}`. A missing/disabled/unopenable camera or failed read shows a real error. Retry is explicit through Start; errors are not hidden by an endless reconnect loop.
-
-The backend already draws boxes in original-image pixel coordinates. The frontend displays the JPEG with `object-contain` and adds no detection-box overlay. An image-load callback sends its `frame_ack` only for the current socket/frame key; distinct keys also handle repeated identical JPEGs. A five-second watchdog clears frozen results. PPE boxes are cached between inferences, so they may lag movement even while the video moves.
-
-Health polls every five seconds. Reachable backend + loaded model + reachable DB determine the main online state; SMTP configuration is separate metadata. A down backend clears live data and shows Offline. Historical worker totals/compliance have no valid denominator and are not inferred from a violation-only database.
-
-## Uploads
-
-`api/uploadValidation.js` checks the selected extension and size against `GET /api/uploads/limits`; the backend also validates actual content. A selected batch runs sequentially, duplicate concurrent actions are guarded, and result/error state is stored per queued item. View result reopens a completed item's result. Switching upload tabs is disabled while processing.
-
-`components/UploadResult.jsx` displays the backend annotation, each worker's Helmet/Safety Vest/Face Mask state and created record IDs. Missing masks can be `mask not assessable`; requirements disabled by site policy are `not required`. The image anchor downloads the annotated JPEG.
-
-Video views use `total_frames`, `frames_processed`, `worker_observations`, `max_workers_in_frame`, `violation_frames`, `created_violations` and `key_frames`. Worker observations are not unique identities. Key frames have image downloads; there is no disabled/fake full-video export. Upload progress measures bytes transferred; analysis has a busy message, not a guessed percentage. Actual validation/server errors remain visible.
-
-## Review and reports
-
-`components/ViolationReview.jsx` shares Acknowledge, Escalate and Archive Evidence actions between history/detail and Dashboard incidents. The backend is authoritative for status/timestamps. Acknowledging an escalated record does not downgrade it. Archiving hides it from default history/recent incidents but retains evidence and the row; the archived-only filter exposes it.
-
-`api/violationReports.js` imports no mutation API. It requests every matching page using the current date/type/camera/review/archive filters. Dates use native date inputs so partial text is not sent as an invalid date; camera IDs use a numeric input. CSV escapes quotes/newlines and neutralizes spreadsheet-formula prefixes. PDF contains a count/PPE summary, table and available unique evidence thumbnails; missing images are labelled unavailable rather than aborting the report. Neither export calls a deletion API; the retired bulk-delete endpoint also rejects deletion with HTTP 405. Table/detail/share content uses the API's actual `source` field.
-
-## Settings and alert previews
-
-Settings reads the backend's required-PPE list and saves it with other validated values. Empty/duplicate/unknown PPE lists are rejected. All three PPE items are defaults; masks still use the face-visibility gate.
-
-`components/EmailPreview.jsx` renders the exact built subject/body/recipient, attachment metadata and downloadable MIME `.eml`. Preview is available in Settings (synthetic manual test, no associated screenshot) and a violation detail (its annotated screenshot is required). A preview never sends a message or writes alert logs.
-
-Send test email uses the saved recipient, makes one POST only after a click, guards duplicate clicks in progress, and keeps the actual outcome visible. It is disabled unless email is enabled and effective delivery mode is live. Preview mode and the legacy debug flag prevent external delivery independently of saved toggles. SMTP configuration readiness does not prove authentication or inbox delivery. Manual WhatsApp API sharing also remains subject to the preview gate.
-
-## Checks and build
-
-From the root:
-
-```bash
-node --test frontend/test/live_stream.test.mjs frontend/test/violation_reports.test.mjs frontend/test/uploads.test.mjs
-node frontend/test/ui_status.test.cjs
-npm --prefix frontend run build
-```
-
-The selected tests use fake sockets and static rendering without real alerts/cameras. A production bundle is not a deployed backend; route/proxy/TLS/service configuration is still required. See the [API contract](backend_api_contract.md) for wire formats and [README limitations](../README.md#limitations-and-evaluation-status).
+Run frontend tests/build through [testing instructions](testing.md). The production build succeeds but warns about a large report/chart bundle; route/code splitting remains an optimization opportunity.

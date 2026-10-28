@@ -1,0 +1,86 @@
+{
+  "command": "python -B tools/final_audit.py --trial <temporary-trial-directory>",
+  "cases": 42,
+  "pass": 42,
+  "fail": [],
+  "page_errors": [],
+  "telemetry_counts": {
+    "network": 43,
+    "http": 3,
+    "console": 3
+  },
+  "unexpected_telemetry": [],
+  "telemetry_note": "Raw telemetry is retained. Intentional synthetic 500/422 validation, blocked deletion, invalid renamed image and cancelled navigation/session requests are identified separately; no claim that every network request succeeded.",
+  "protected_files": [
+    {
+      "path": "I:\\AntiGRavity\\SafeGuard\\backend\\.env",
+      "unchanged": true,
+      "bytes": 1788
+    },
+    {
+      "path": "I:\\AntiGRavity\\SafeGuard\\backend\\safeguard.db",
+      "unchanged": true,
+      "bytes": 90112
+    },
+    {
+      "path": "I:\\AntiGRavity\\SafeGuard\\safeguard.db",
+      "unchanged": true,
+      "bytes": 40960
+    },
+    {
+      "path": "I:\\AntiGRavity\\SafeGuard\\docs\\Final_Proposal.pdf",
+      "unchanged": true,
+      "bytes": 543183
+    },
+    {
+      "path": "I:\\AntiGRavity\\SafeGuard\\docs\\FYP_Part_I Presentation.pptx",
+      "unchanged": true,
+      "bytes": 2430632
+    }
+  ],
+  "temporary_database": {
+    "original_copy_rows": 136,
+    "current_copy_rows": 175,
+    "original_ids_preserved": true,
+    "integrity": "ok",
+    "new_incidents_email_success_flags": 0,
+    "new_alert_status_counts": [
+      [
+        "preview",
+        "preview",
+        3
+      ]
+    ],
+    "historical_alert_log_note": "Legacy success/failed rows are inherited from the original disposable source; only rows above its maximum alert-log ID belong to this master task.",
+    "alert_status_counts": [
+      [
+        "failed",
+        null,
+        3
+      ],
+      [
+        "preview",
+        "preview",
+        4
+      ],
+      [
+        "success",
+        null,
+        19
+      ]
+    ],
+    "saved_settings": {
+      "id": 1,
+      "email_enabled": 0,
+      "whatsapp_enabled": 0,
+      "email_recipients": "qa@example.invalid",
+      "whatsapp_recipient": "+15005550007",
+      "email_cooldown": 30,
+      "whatsapp_cooldown": 60,
+      "confidence_threshold": 0.5,
+      "required_ppe": "[\"Helmet\", \"Safety Vest\", \"Face Mask\"]",
+      "frame_skip": 3
+    }
+  },
+  "branch": "codex-fixes"
+}

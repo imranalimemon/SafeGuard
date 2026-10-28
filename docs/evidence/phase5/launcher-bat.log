@@ -1,0 +1,39 @@
+[WARNING] Preferred virtual environment cannot load the backend runtime. Trying the original PATH Python.
+Starting backend http://127.0.0.1:8000 and frontend http://127.0.0.1:5173
+Alert delivery mode: preview
+Press Ctrl+C to stop both. Read startup errors below; startup is not a health check.
+[BACKEND] INFO:     Started server process [19112]
+[BACKEND] INFO:     Waiting for application startup.
+[BACKEND] INFO:     Application startup complete.
+[BACKEND] INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+[FRONTEND] 
+[FRONTEND] > safeguard-frontend@0.0.0 dev
+[FRONTEND] > vite --host 127.0.0.1 --port 5173 --strictPort
+[FRONTEND] 
+[FRONTEND] 
+[FRONTEND]   VITE v5.4.21  ready in 688 ms
+[FRONTEND] 
+[FRONTEND]   ➜  Local:   http://127.0.0.1:5173/
+[BACKEND] ==================================================
+[BACKEND]   SafeGuard AI API -- Starting Up
+[BACKEND] ==================================================
+[BACKEND]   Model path:      best.onnx
+[BACKEND]   Database:        sqlite:///C:\Users\imran\AppData\Local\Temp\safeguard-master-6ceo9ejc/trial.db
+[BACKEND]   Email alerts:    OFF
+[BACKEND]   WhatsApp alerts: OFF
+[BACKEND]   Alert delivery:  preview (DB toggles cannot change this)
+[BACKEND]   Screenshots:     C:\Users\imran\AppData\Local\Temp\safeguard-master-6ceo9ejc/screenshots
+[BACKEND]   Alert debug:     OFF
+[BACKEND] ==================================================
+[BACKEND] INFO:     127.0.0.1:58898 - "GET /api/auth/session HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:58899 - "GET /api/auth/session HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:53902 - "POST /api/auth/login HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:58105 - "GET /api/health HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:58106 - "GET /api/health HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:56570 - "GET /api/cameras HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:50881 - "GET /api/stats/dashboard HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:58107 - "GET /api/stats/analytics HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:56571 - "GET /api/stats/analytics HTTP/1.1" 200 OK
+[BACKEND] INFO:     127.0.0.1:56573 - "GET /api/health HTTP/1.1" 200 OK
+[BACKEND] cd backend && python -B -m uvicorn main:app --host 127.0.0.1 --port 8000 exited with code 1
+--> Sending SIGTERM to other processes..

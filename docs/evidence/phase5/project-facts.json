@@ -1,0 +1,213 @@
+{
+  "command": "python -B tools/project_facts.py",
+  "dataset_root": "I:/AntiGRavity/My_FYP_Dataset",
+  "dataset_splits": {
+    "train": {
+      "images": 5689,
+      "labels": 5689,
+      "class_box_counts": {
+        "Face Mask": 2151,
+        "Helmet": 17208,
+        "Person": 19005,
+        "Safety Vest": 3059
+      }
+    },
+    "valid": {
+      "images": 1222,
+      "labels": 1222,
+      "class_box_counts": {
+        "Face Mask": 631,
+        "Helmet": 3595,
+        "Person": 3868,
+        "Safety Vest": 640
+      }
+    },
+    "test": {
+      "images": 1224,
+      "labels": 1224,
+      "class_box_counts": {
+        "Face Mask": 420,
+        "Helmet": 3893,
+        "Person": 4414,
+        "Safety Vest": 690
+      }
+    }
+  },
+  "training_runs": [
+    {
+      "args_file": "training_artifacts\\yolov8s\\args.yaml",
+      "args_sha256": "d11ec184feffb13746e794e5ff987ca02683bc3a5689305d02d911db62835df6",
+      "args_text": "task: detect\nmode: train\nmodel: /content/drive/MyDrive/FYP_PART_I/models/yolov8s_balanced/weights/last.pt\ndata: /content/data.yaml\nepochs: 100\ntime: null\npatience: 30\nbatch: 16\nimgsz: 640\nsave: true\nsave_period: 10\ncache: false\ndevice: '0'\nworkers: 2\nproject: /content/drive/MyDrive/FYP_PART_I/models\nname: yolov8s_balanced\nexist_ok: true\npretrained: true\noptimizer: SGD\nverbose: true\nseed: 42\ndeterministic: true\nsingle_cls: false\nrect: false\ncos_lr: true\nclose_mosaic: 15\nresume: /content/drive/MyDrive/FYP_PART_I/models/yolov8s_balanced/weights/last.pt\namp: true\nfraction: 1.0\nprofile: false\nfreeze: null\nmulti_scale: 0.0\ncompile: false\noverlap_mask: true\nmask_ratio: 4\ndropout: 0.0\nval: true\nsplit: val\nsave_json: false\nconf: null\niou: 0.7\nmax_det: 300\nhalf: false\ndnn: false\nplots: true\nend2end: null\nsource: null\nvid_stride: 1\nstream_buffer: false\nvisualize: false\naugment: false\nagnostic_nms: false\nclasses: null\nretina_masks: false\nembed: null\nshow: false\nsave_frames: false\nsave_txt: false\nsave_conf: false\nsave_crop: false\nshow_labels: true\nshow_conf: true\nshow_boxes: true\nline_width: null\nformat: torchscript\nkeras: false\noptimize: false\nint8: false\ndynamic: false\nsimplify: true\nopset: null\nworkspace: null\nnms: false\nlr0: 0.01\nlrf: 0.01\nmomentum: 0.937\nweight_decay: 0.0005\nwarmup_epochs: 5.0\nwarmup_momentum: 0.8\nwarmup_bias_lr: 0.1\nbox: 7.5\ncls: 1.5\ncls_pw: 0.0\ndfl: 1.5\npose: 12.0\nkobj: 1.0\nrle: 1.0\nangle: 1.0\nnbs: 64\nhsv_h: 0.01\nhsv_s: 0.5\nhsv_v: 0.3\ndegrees: 3.0\ntranslate: 0.1\nscale: 0.4\nshear: 1.0\nperspective: 0.0\nflipud: 0.0\nfliplr: 0.5\nbgr: 0.0\nmosaic: 1.0\nmixup: 0.1\ncutmix: 0.0\ncopy_paste: 0.1\ncopy_paste_mode: flip\nauto_augment: randaugment\nerasing: 0.4\ncfg: null\ntracker: botsort.yaml\nsave_dir: /content/drive/.shortcut-targets-by-id/1Ih6qRVMepUda1uLZdHccWj6Xym38-Q7Z/FYP_PART_I/models/yolov8s_balanced\n",
+      "results_file": "training_artifacts\\yolov8s\\results.csv",
+      "results_sha256": "f2b5de62efa4309573d42df44072fe5f787c4b46863efd9fa0c87143755ee60b",
+      "epochs_logged": 99,
+      "last_row": {
+        "epoch": "99",
+        "time": "6012",
+        "train/box_loss": "1.06285",
+        "train/cls_loss": "1.40841",
+        "train/dfl_loss": "1.12757",
+        "metrics/precision(B)": "0.92791",
+        "metrics/recall(B)": "0.92594",
+        "metrics/mAP50(B)": "0.95727",
+        "metrics/mAP50-95(B)": "0.65004",
+        "val/box_loss": "1.19672",
+        "val/cls_loss": "1.59754",
+        "val/dfl_loss": "1.21161",
+        "lr/pg0": "0.000109768",
+        "lr/pg1": "0.000109768",
+        "lr/pg2": "0.000109768"
+      },
+      "best_map50_95_row": {
+        "epoch": "99",
+        "time": "6012",
+        "train/box_loss": "1.06285",
+        "train/cls_loss": "1.40841",
+        "train/dfl_loss": "1.12757",
+        "metrics/precision(B)": "0.92791",
+        "metrics/recall(B)": "0.92594",
+        "metrics/mAP50(B)": "0.95727",
+        "metrics/mAP50-95(B)": "0.65004",
+        "val/box_loss": "1.19672",
+        "val/cls_loss": "1.59754",
+        "val/dfl_loss": "1.21161",
+        "lr/pg0": "0.000109768",
+        "lr/pg1": "0.000109768",
+        "lr/pg2": "0.000109768"
+      }
+    }
+  ],
+  "augmentation_script_sha256": "3759d1b76f32190fbed2515707e422a409440ea9778a4bb8234bbb15fc5d9bfb",
+  "pooling_evidence": [
+    {
+      "line": 58,
+      "text": "            parts = line.strip().split()"
+    },
+    {
+      "line": 62,
+      "text": "                # Clamp bbox to valid range"
+    },
+    {
+      "line": 64,
+      "text": "                # Skip invalid boxes"
+    },
+    {
+      "line": 104,
+      "text": "for split in ['train', 'valid', 'test']:"
+    },
+    {
+      "line": 105,
+      "text": "    img_dir = os.path.join(ORIG_DIR, split, 'images')"
+    },
+    {
+      "line": 106,
+      "text": "    lbl_dir = os.path.join(ORIG_DIR, split, 'labels')"
+    },
+    {
+      "line": 110,
+      "text": "        stem = os.path.splitext(img_file)[0]"
+    },
+    {
+      "line": 202,
+      "text": "# \u2500\u2500 Step 4: Shuffle and split \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "line": 207,
+      "text": "random.shuffle(all_final)"
+    },
+    {
+      "line": 210,
+      "text": "n_train = int(n * 0.80)"
+    },
+    {
+      "line": 211,
+      "text": "n_valid = int(n * 0.10)"
+    },
+    {
+      "line": 213,
+      "text": "splits = {"
+    },
+    {
+      "line": 214,
+      "text": "    'train': all_final[:n_train],"
+    },
+    {
+      "line": 215,
+      "text": "    'valid': all_final[n_train:n_train + n_valid],"
+    },
+    {
+      "line": 216,
+      "text": "    'test':  all_final[n_train + n_valid:],"
+    },
+    {
+      "line": 219,
+      "text": "for s, files in splits.items():"
+    },
+    {
+      "line": 224,
+      "text": "for split_name, entries in splits.items():"
+    },
+    {
+      "line": 225,
+      "text": "    img_dst = os.path.join(OUT_DIR, split_name, 'images')"
+    },
+    {
+      "line": 226,
+      "text": "    lbl_dst = os.path.join(OUT_DIR, split_name, 'labels')"
+    },
+    {
+      "line": 232,
+      "text": "            print(f\"   [{split_name}] {i+1:,}/{len(entries):,}...\")"
+    },
+    {
+      "line": 241,
+      "text": "            ext = os.path.splitext(img_path)[1]"
+    },
+    {
+      "line": 245,
+      "text": "            ext = os.path.splitext(orig_path)[1]"
+    },
+    {
+      "line": 250,
+      "text": "    print(f\"   Done: {split_name}\")"
+    },
+    {
+      "line": 253,
+      "text": "yaml_content = \"\"\"train: ./train/images"
+    },
+    {
+      "line": 254,
+      "text": "val: ./valid/images"
+    },
+    {
+      "line": 255,
+      "text": "test: ./test/images"
+    },
+    {
+      "line": 272,
+      "text": "for split in ['train', 'valid', 'test']:"
+    },
+    {
+      "line": 273,
+      "text": "    ic = len(os.listdir(os.path.join(OUT_DIR, split, 'images')))"
+    },
+    {
+      "line": 274,
+      "text": "    lc = len(os.listdir(os.path.join(OUT_DIR, split, 'labels')))"
+    },
+    {
+      "line": 276,
+      "text": "    print(f\"   [{m}] {split}: {ic:,} images, {lc:,} labels\")"
+    },
+    {
+      "line": 279,
+      "text": "p = os.path.join(OUT_DIR, 'train', 'labels')"
+    },
+    {
+      "line": 284,
+      "text": "            parts = line.strip().split()"
+    }
+  ],
+  "augmented_report": "============================================================\nFYP_Balanced_Dataset (AUGMENTED) FINAL REPORT\n============================================================\n  [OK] train: 12,092 images, 12,092 labels\n  [OK] valid: 1,511 images, 1,511 labels\n  [OK] test: 1,512 images, 1,512 labels\n\n--- TRAIN split class distribution ---\n  0: Face Mask         12,822 ( 13.7%)\n  1: Helmet            28,296 ( 30.2%)\n  2: Person            41,902 ( 44.7%)\n  3: Safety Vest       10,691 ( 11.4%)\n  TOTAL: 93,711\n  Imbalance ratio: 3.9x (was 8.5x)\n\n--- VALID split class distribution ---\n  0: Face Mask          1,516 ( 13.5%)\n  1: Helmet             3,453 ( 30.9%)\n  2: Person             5,027 ( 44.9%)\n  3: Safety Vest        1,195 ( 10.7%)\n  TOTAL: 11,191\n\n--- TEST split class distribution ---\n  0: Face Mask          1,602 ( 14.3%)\n  1: Helmet             3,302 ( 29.5%)\n  2: Person             4,993 ( 44.6%)\n  3: Safety Vest        1,296 ( 11.6%)\n  TOTAL: 11,193",
+  "model_training_link": "ONNX hash is known; exact export-to-training-run provenance has not been independently established."
+}

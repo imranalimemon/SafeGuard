@@ -12,6 +12,7 @@ const Navbar = () => {
   return (
   <header className="fixed top-0 left-64 right-0 h-16 z-50 flex items-center justify-between px-6" style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-outline-variant)' }}>
     <LiveAlertBanner mode={health.alert_delivery_mode} />
+    {health.demo_label && <strong className="demo-banner" role="status">{health.demo_label}</strong>}
     <strong style={{ color: '#FF6B00' }}>SafeGuard AI</strong>
     <nav className="flex gap-6">
       <NavLink to="/">Live View</NavLink>

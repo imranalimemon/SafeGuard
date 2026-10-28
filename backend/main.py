@@ -34,6 +34,10 @@ def initialize_storage():
     ensure_violation_columns(engine)
     ensure_alert_settings_columns(engine)
     ensure_alert_log_columns(engine)
+    from sqlalchemy import text
+    with engine.connect() as connection:
+        demo = connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='demo_metadata'")).first()
+        settings.DEMO_LABEL = connection.execute(text('SELECT label FROM demo_metadata LIMIT 1')).scalar() if demo else None
 
 
 @asynccontextmanager

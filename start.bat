@@ -35,12 +35,12 @@ if errorlevel 1 (
     echo [ERROR] Python is missing. Create .venv and install backend requirements.
     exit /b 1
 )
-call python -B -c "import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator" >nul 2>nul
+call python -B -c "import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata, cryptography, multipart, websockets; from pydantic import model_validator" >nul 2>nul
 if errorlevel 1 (
     echo [WARNING] Preferred virtual environment cannot load the backend runtime. Trying the original PATH Python.
     set "PATH=%SG_ORIGINAL_PATH%"
     set "VIRTUAL_ENV="
-    call python -B -c "import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator" >nul 2>nul
+    call python -B -c "import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata, cryptography, multipart, websockets; from pydantic import model_validator" >nul 2>nul
     if errorlevel 1 (
         echo [ERROR] Backend runtime dependencies are missing. Install backend/requirements.txt in a working Python environment.
         exit /b 1
@@ -49,6 +49,7 @@ if errorlevel 1 (
 
 REM Delivery mode is process-only; saved DB toggles cannot override preview.
 if not defined ALERT_DELIVERY_MODE set "ALERT_DELIVERY_MODE=preview"
+if not defined ALLOWED_ORIGINS set "ALLOWED_ORIGINS=http://127.0.0.1:5173,http://localhost:5173"
 set "VITE_BACKEND_URL=http://127.0.0.1:8000"
 echo Starting backend http://127.0.0.1:8000 and frontend http://127.0.0.1:5173
 echo Alert delivery mode: %ALERT_DELIVERY_MODE%

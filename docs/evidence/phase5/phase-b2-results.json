@@ -1,0 +1,141 @@
+{
+  "results": [
+    {
+      "area": "30-violation-source-fixed",
+      "result": "PASS",
+      "detail": {
+        "source": "video_upload",
+        "total": 170
+      },
+      "evidence": "docs/screenshots/master-qa-30-violation-source-fixed.png"
+    },
+    {
+      "area": "31-date-filter-fixed",
+      "result": "PASS",
+      "evidence": "docs/screenshots/master-qa-31-date-filter-fixed.png"
+    },
+    {
+      "area": "32-type-filter-csv",
+      "result": "PASS",
+      "detail": {
+        "count": 155,
+        "total": 155,
+        "download": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\helmet-filter.csv"
+      },
+      "evidence": "docs/screenshots/master-qa-32-type-filter-csv.png"
+    },
+    {
+      "area": "33-camera-date-review-filters",
+      "result": "PASS",
+      "detail": {
+        "total": 2
+      },
+      "evidence": "docs/screenshots/master-qa-33-camera-date-review-filters.png"
+    },
+    {
+      "area": "34-pdf-export",
+      "result": "PASS",
+      "detail": {
+        "total": 2,
+        "bytes": 98721,
+        "download": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\camera-3-report.pdf"
+      },
+      "evidence": "docs/screenshots/master-qa-34-pdf-export.png"
+    },
+    {
+      "area": "35-acknowledge-escalate",
+      "result": "PASS",
+      "detail": {
+        "id": 174,
+        "status": "escalated"
+      },
+      "evidence": "docs/screenshots/master-qa-35-acknowledge-escalate.png"
+    },
+    {
+      "area": "36-evidence-preview",
+      "result": "PASS",
+      "detail": {
+        "eml": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\violation-preview.eml"
+      },
+      "evidence": "docs/screenshots/master-qa-36-evidence-preview.png"
+    },
+    {
+      "area": "37-preview-twilio-no-delivery",
+      "result": "PASS",
+      "detail": {
+        "ok": false,
+        "message": "Preview mode: Twilio was not contacted. Nothing was sent.",
+        "transport": "preview",
+        "sent": false,
+        "recipient": "+15005550007",
+        "logged": true
+      },
+      "evidence": "docs/screenshots/master-qa-37-preview-twilio-no-delivery.png"
+    },
+    {
+      "area": "38-review-filter-archive",
+      "result": "PASS",
+      "evidence": "docs/screenshots/master-qa-38-review-filter-archive.png"
+    },
+    {
+      "area": "39-no-violation-deletion",
+      "result": "PASS",
+      "detail": {
+        "status": 405,
+        "count": 175
+      },
+      "evidence": "docs/screenshots/master-qa-39-no-violation-deletion.png"
+    }
+  ],
+  "telemetry": [
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/stats/analytics",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/settings/alerts/delivery",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "command": "node tools/qa_final_cameras.cjs <Playwright-directory> <temporary-auth.json>"
+}

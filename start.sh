@@ -33,23 +33,30 @@ for candidate in .venv/bin/activate backend/.venv/bin/activate backend/venv/bin/
     fi
 done
 if [[ -z "$PYTHON" ]]; then
-    if command -v python3 >/dev/null 2>&1; then PYTHON=python3
-    elif command -v python >/dev/null 2>&1; then PYTHON=python
+    if command -v python >/dev/null 2>&1; then PYTHON=python
+    elif command -v python3 >/dev/null 2>&1; then PYTHON=python3
     else echo "[ERROR] Python is missing. Create .venv and install backend requirements." >&2; exit 1
     fi
 fi
-if ! "$PYTHON" -B -c 'import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator' >/dev/null 2>&1; then
+if ! "$PYTHON" -B -c 'import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata, cryptography, multipart, websockets; from pydantic import model_validator' >/dev/null 2>&1; then
     echo "[WARNING] Preferred virtual environment cannot load the backend runtime. Trying original PATH Python." >&2
     export PATH="$SG_ORIGINAL_PATH"
     unset VIRTUAL_ENV
-    if command -v python3 >/dev/null 2>&1; then PYTHON=python3; else PYTHON=python; fi
-    if ! "$PYTHON" -B -c 'import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator' >/dev/null 2>&1; then
+    PYTHON=""
+    for candidate in python python3; do
+        if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -B -c 'import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata, cryptography, multipart, websockets; from pydantic import model_validator' >/dev/null 2>&1; then
+            PYTHON="$candidate"
+            break
+        fi
+    done
+    if [[ -z "$PYTHON" ]]; then
         echo "[ERROR] Backend runtime dependencies are missing. Install backend/requirements.txt in a working Python environment." >&2
         exit 1
     fi
 fi
 
 export ALERT_DELIVERY_MODE="${ALERT_DELIVERY_MODE:-preview}"
+export ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173}"
 export VITE_BACKEND_URL=http://127.0.0.1:8000
 echo "Starting backend http://127.0.0.1:8000 and frontend http://127.0.0.1:5173"
 echo "Alert delivery mode: $ALERT_DELIVERY_MODE"

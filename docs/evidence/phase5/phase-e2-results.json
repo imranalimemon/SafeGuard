@@ -1,0 +1,122 @@
+{
+  "results": [
+    {
+      "area": "58-camera-password-preserved",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-58-camera-password-preserved.png"
+    },
+    {
+      "area": "59-camera-delete-error-visible",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-59-camera-delete-error-visible.png"
+    },
+    {
+      "area": "60-camera-validation-does-not-crash",
+      "result": "PASS",
+      "evidence": "docs/screenshots/qa-60-camera-validation-does-not-crash.png"
+    },
+    {
+      "area": "61-discovery-selection-ui-fixture",
+      "result": "PASS",
+      "detail": "Discovery UI and real config create/delete tested with synthetic discovery response; no hardware opened",
+      "evidence": "docs/screenshots/qa-61-discovery-selection-ui-fixture.png"
+    },
+    {
+      "area": "62-global-navigation",
+      "result": "PASS",
+      "detail": "Header and sidebar routes work",
+      "evidence": "docs/screenshots/qa-62-global-navigation.png"
+    }
+  ],
+  "telemetry": [
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/stats/analytics",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "startup",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "59-camera-delete-error-visible",
+      "type": "http",
+      "url": "http://127.0.0.1:5173/api/cameras/5",
+      "status": 500
+    },
+    {
+      "area": "59-camera-delete-error-visible",
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "area": "60-camera-validation-does-not-crash",
+      "type": "http",
+      "url": "http://127.0.0.1:5173/api/cameras",
+      "status": 422
+    },
+    {
+      "area": "60-camera-validation-does-not-crash",
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 422 (Unprocessable Content)"
+    },
+    {
+      "area": "60-camera-validation-does-not-crash",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/auth/session",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "60-camera-validation-does-not-crash",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/health",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "62-global-navigation",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/stats/analytics",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "area": "62-global-navigation",
+      "type": "network",
+      "url": "http://127.0.0.1:5173/api/settings/alerts/delivery",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "command": "node tools/qa_final_errors.cjs <Playwright-directory> <temporary-auth.json>"
+}

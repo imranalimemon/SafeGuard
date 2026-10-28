@@ -1,0 +1,8 @@
+﻿{
+  "label": "DEMO: copied real records, not current monitoring",
+  "database": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-DEMO-zgn14wp5\\demo.db",
+  "screenshots": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-DEMO-zgn14wp5\\screenshots",
+  "records": 20,
+  "integrity": "ok",
+  "source_copy": "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\trial.db"
+}

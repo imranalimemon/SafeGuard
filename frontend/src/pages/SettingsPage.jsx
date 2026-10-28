@@ -71,8 +71,8 @@ const AlertPanel = ({ title, icon, enabled, onToggle, fields, disabled = false }
       <div className="flex flex-col gap-4">
         {fields.map(({ label, element }) => (
           <div key={label}>
-            <FieldLabel htmlFor={`setting-${label.replace(/[^a-z0-9]/gi, "-")}`}>{label}</FieldLabel>
-            {React.isValidElement(element) ? React.cloneElement(element, { id: `setting-${label.replace(/[^a-z0-9]/gi, "-")}` }) : element}
+            <FieldLabel htmlFor={`setting-${(title + "-" + label).replace(/[^a-z0-9]/gi, "-")}`}>{label}</FieldLabel>
+            {React.isValidElement(element) ? React.cloneElement(element, { id: `setting-${(title + "-" + label).replace(/[^a-z0-9]/gi, "-")}` }) : element}
           </div>
         ))}
       </div>
