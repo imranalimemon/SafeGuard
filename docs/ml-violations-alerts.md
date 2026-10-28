@@ -71,6 +71,14 @@ SMTP uses STARTTLS, or implicit TLS on port 465. Missing configuration, authenti
 
 For non-delivering tests, explicitly set process `ALERT_DELIVERY_MODE=preview` even if a database contains enabled alert toggles. Do not use credentialed real transports in unit tests. `test_alerts.py` uses fake SMTP/Twilio, rejects outbound sockets and writes only disposable databases.
 
+### Deliberately enabling live delivery
+
+1. Use preview with a disposable database first. Inspect the violation preview `.eml`, recipient, timestamp/timezone, missing PPE and annotated attachment. Preview builds the same MIME content as delivery.
+2. Stop all live feeds/uploads. Check the intended saved recipients and both saved channel toggles; those toggles override environment defaults. Leave automatic channels disabled while preparing the deployment.
+3. Configure private SMTP/Twilio credentials and bounded `ALERT_NETWORK_TIMEOUT_SECONDS`. Set process `ALERT_DELIVERY_MODE=live` and `ALERT_DEBUG_MODE=false`, then restart the backend. Check `/api/health`; SMTP configured does not mean authenticated or delivered.
+4. Only when a real message is intended, enable the desired saved channel, save, and click its manual test once. Enabling the channel also permits automatic alerts from subsequent detections. Verify the actual recipient/result/log before starting feeds.
+5. To stop all external delivery independently of saved toggles, restart with `ALERT_DELIVERY_MODE=preview`. No live transport delivery was attempted in the final QA batch.
+
 ## Evaluation limits
 
 CPU throughput and cached live boxes are described in [README](../README.md#limitations-and-evaluation-status). Small/occluded PPE, overlapping workers, pose/lighting/domain changes, and frontal-face false positives/negatives still need real-site validation. A mask-unassessable result does not demonstrate mask compliance. Final accuracy/mAP/per-class claims remain pending a leakage audit, leakage-free retraining and independent held-out evaluation. The direct 12-image sanity tool is a functional regression check, not that evaluation.

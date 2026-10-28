@@ -5,12 +5,12 @@ import {
   listCameras, createCamera, updateCamera, deleteCamera, testCamera, scanCameras,
   autoDetectCameras,
 } from '../api/client';
+import { cameraUpdatePayload, cameraErrorMessage } from '../api/cameraForm';
 
 /* ── helpers ─────────────────────────────────────────────── */
 const emptyForm = () => ({
   name: '', source_type: 'webcam', url: '',
   username: '', password: '', location: '',
-  resolution: '1920x1080', frame_rate: '30',
   enabled: true,
 });
 
@@ -106,14 +106,7 @@ export const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, test
         {online ? (
           <>
             <span className="material-symbols-outlined z-10" style={{ color: 'var(--color-on-surface-variant)', opacity: 0.4, fontSize: '36px' }}>videocam</span>
-            <div className="absolute bottom-2 left-2 flex gap-1.5 z-10">
-              <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--color-on-surface)', fontSize: '10px', border: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(4px)' }}>
-                {camera.resolution || 'Resolution not available'}
-              </span>
-              <span className="font-data-label px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.8)', color: 'var(--color-on-surface)', fontSize: '10px', border: '1px solid var(--color-outline-variant)', backdropFilter: 'blur(4px)' }}>
-                {camera.frame_rate ? `${camera.frame_rate}fps` : 'FPS not available'}
-              </span>
-            </div>
+
           </>
         ) : (
           <div className="flex flex-col items-center text-center">
@@ -159,7 +152,7 @@ export const CameraCard = ({ camera, isSelected, onClick, onEdit, onDelete, test
 };
 
 /* ── Detail / Config Panel ───────────────────────────────── */
-const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, formError, editing }) => {
+export const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, formError, editing }) => {
 
   return (
     <div className="w-96 flex flex-col flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline-variant)' }}>
@@ -175,7 +168,7 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
         {formError && (
-          <p className="font-data-label px-3 py-2 rounded" style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.3)', color: '#FF2D55', fontSize: '11px' }}>{formError}</p>
+          <p role="alert" className="font-data-label px-3 py-2 rounded" style={{ background: 'rgba(255,45,85,0.1)', border: '1px solid rgba(255,45,85,0.3)', color: '#FF2D55', fontSize: '11px' }}>{formError}</p>
         )}
 
         {/* Technical Specs */}
@@ -198,31 +191,13 @@ const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitting, fo
             </div>
             {form.source_type !== 'webcam' && (
               <div className="flex flex-col gap-1">
-                <Label>Stream URL (RTSP)</Label>
+                <Label>Stream URL (HTTP / RTSP)</Label>
                 <TextInput value={form.url} onChange={(e) => onChange('url', e.target.value)} placeholder="rtsp://user:pass@192.168.1.x:554/stream1" />
               </div>
             )}
             <div className="flex flex-col gap-1">
               <Label>Location</Label>
-              <TextInput value={form.location} onChange={(e) => onChange('location', e.target.value)} placeholder="e.g. Zone A / Loading Bay" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <Label>Resolution</Label>
-                <SelectInput
-                  value={form.resolution || '1920x1080'}
-                  onChange={(e) => onChange('resolution', e.target.value)}
-                  options={['1920x1080', '1280x720', '640x480']}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label>Frame Rate</Label>
-                <SelectInput
-                  value={form.frame_rate || '30'}
-                  onChange={(e) => onChange('frame_rate', e.target.value)}
-                  options={[{ value: '30', label: '30 FPS' }, { value: '15', label: '15 FPS' }, { value: '5', label: '5 FPS' }]}
-                />
-              </div>
+              <TextInput value={form.location} onChange={(e) => onChange('location', e.target.value)} placeholder="Optional camera location" />
             </div>
             <div className="flex flex-col gap-1">
               <Label>Enabled</Label>
@@ -292,7 +267,7 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
         setPhase('review');
       } catch (err) {
         if (cancelled) return;
-        setErrorMsg(err?.response?.data?.detail || err?.message || 'Auto-detect failed.');
+        setErrorMsg(cameraErrorMessage(err, 'Auto-detect failed.'));
         setPhase('error');
       }
     })();
@@ -350,7 +325,7 @@ const AutoDetectModal = ({ onClose, onAdded }) => {
       } catch (err) {
         errors.push({
           key: k,
-          detail: err?.response?.data?.detail || err?.message || 'Failed to add.',
+          detail: cameraErrorMessage(err, 'Failed to add.'),
         });
       }
     }
@@ -544,8 +519,6 @@ const CamerasPage = () => {
       username: camera.username || '',
       password: '',
       location: camera.location || '',
-      resolution: camera.resolution || '1920x1080',
-      frame_rate: camera.frame_rate || '30',
       enabled: camera.enabled ?? true,
     });
     setFormError('');
@@ -561,18 +534,19 @@ const CamerasPage = () => {
     setIsSubmitting(true);
     setFormError('');
     try {
-      if (editing) await updateCamera(editing.id, form);
+      if (editing) await updateCamera(editing.id, cameraUpdatePayload(form));
       else         await createCamera(form);
       await fetchCameras();
       closePanel();
     } catch (err) {
-      setFormError(err?.response?.data?.detail || 'Failed to save camera.');
+      setFormError(cameraErrorMessage(err, 'Failed to save camera.'));
     } finally { setIsSubmitting(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this camera?')) return;
-    try { await deleteCamera(id); await fetchCameras(); } catch { /* ignore */ }
+    try { await deleteCamera(id); await fetchCameras(); }
+    catch (err) { setToast({ kind: 'err', message: cameraErrorMessage(err, 'Failed to delete camera.') }); }
   };
 
   const handleTest = async (id) => {
@@ -581,7 +555,7 @@ const CamerasPage = () => {
       const res = await testCamera(id);
       setTestStatus((s) => ({ ...s, [id]: cameraTestResult(res.data) }));
     } catch (err) {
-      setTestStatus((s) => ({ ...s, [id]: { ok: false, message: err?.response?.data?.detail || err?.message || 'Camera test failed.' } }));
+      setTestStatus((s) => ({ ...s, [id]: { ok: false, message: cameraErrorMessage(err, 'Camera test failed.') } }));
     }
   };
 
@@ -693,6 +667,7 @@ const CamerasPage = () => {
       {/* Toast */}
       {toast && (
         <div
+          role={toast.kind === 'err' ? 'alert' : 'status'}
           className="absolute bottom-6 right-6 px-4 py-2 rounded font-data-label"
           style={{
             background: toast.kind === 'err' ? 'rgba(255,45,85,0.95)' : 'rgba(16,185,129,0.95)',

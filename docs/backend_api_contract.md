@@ -81,9 +81,9 @@ Acknowledgment/escalation set their first timestamps. Repeating an action preser
 
 There is **no CSV/PDF server endpoint**. The browser repeatedly GETs `/api/violations` with all current filters and `per_page=200`, then builds CSV or PDF. Export covers all matching pages, not just the visible page. PDF contains a summary/table plus available evidence thumbnails fetched by GET from `/screenshots/`. Neither export mutates records.
 
-### `DELETE /api/violations` - destructive legacy API
+### `DELETE /api/violations` - disabled
 
-Deletes **all** violation rows; returns `{"status":"ok","message":"All violations deleted"}`. It is not Archive Evidence, not an export API, and not called by the current export/archive UI. It remains unauthenticated; never invoke it for normal review/testing against a protected database.
+Always returns HTTP **405** with `{"detail":"Violation deletion is disabled. Archive evidence instead."}`. It performs no mutation and cannot clear records. Archive Evidence uses PATCH; exports use GET only.
 
 ## Uploads
 
@@ -166,7 +166,7 @@ Deletes the camera configuration and returns 200 `{"status":"ok","deleted_id":N}
 
 ### `POST /api/cameras/{camera_id}/test`
 
-Returns `{"ok":true|false,"message":"actual result"}`. A false `ok` is failure even with HTTP 200. Current check is `isOpened()` and release, not a continuous-read guarantee.
+Returns `{"ok":true|false,"message":"actual result"}`. A false `ok` is failure even with HTTP 200. Success requires opening and decoding one frame; capture is always released. Network sources use FFmpeg open/read timeouts of 3000 ms each. A successful test is not a continuous-read guarantee.
 
 ### `GET /api/cameras/scan-local`
 

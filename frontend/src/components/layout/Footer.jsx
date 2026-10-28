@@ -16,18 +16,6 @@ const Footer = () => {
       &nbsp;|&nbsp;Model: {health.model_name ?? 'Not available'}
       &nbsp;|&nbsp;Provider: {health.execution_providers?.join(', ') || 'Not available'}
     </div>
-    <div className="flex items-center gap-4">
-      {['System Logs', 'Safety Protocols', 'Help Desk'].map((label) => (
-        <a
-          key={label}
-          href="#"
-          className="font-data-label transition-colors hover:text-on-surface"
-          style={{ color: 'var(--color-on-surface-variant)', fontSize: '11px' }}
-        >
-          {label}
-        </a>
-      ))}
-    </div>
   </footer>
 );
 };

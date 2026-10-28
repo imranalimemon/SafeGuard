@@ -117,6 +117,6 @@ finally:
 
 Run this from the repository root or replace the source path. If source configuration differs, use its actual path. A backup is only a recovery asset after integrity verification and evidence preservation.
 
-## Destructive legacy endpoint
+## Record preservation
 
-`DELETE /api/violations` still deletes all violation rows and is not protected by authentication. The current UI does not call it for exports/archive. Do not use it as a maintenance or export operation. Retention, recovery tooling and authentication remain deployment work, not implemented guarantees.
+`DELETE /api/violations` is disabled and always returns HTTP 405: `Violation deletion is disabled. Archive evidence instead.` It does not delete rows or files. CSV/PDF exports read matching records; review/archive only update metadata. This does not prevent an operator with direct filesystem/SQL access from changing data. Retention, recovery tooling and authentication remain deployment work.

@@ -102,6 +102,13 @@ class ViolationWorkflowTests(unittest.TestCase):
         self.assertEqual(error.exception.status_code, 404)
         self.assertEqual(self.db.query(self.models.Violation).count(), 106)
 
+    def test_legacy_bulk_delete_is_disabled_and_preserves_all_evidence(self):
+        before = [(r.id, r.screenshot_path) for r in self.db.query(self.models.Violation).all()]
+        with self.assertRaises(HTTPException) as error:
+            self.api.clear_violations(db=self.db)
+        self.assertEqual(error.exception.status_code, 405)
+        self.assertEqual([(r.id, r.screenshot_path) for r in self.db.query(self.models.Violation).all()], before)
+
 
 if __name__ == '__main__':
     unittest.main()

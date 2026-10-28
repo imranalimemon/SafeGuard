@@ -22,7 +22,7 @@ npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173 --strictPort
 | `/upload` | Client validation using backend limits, sequential queue, upload percentage/busy analysis state, results and downloads |
 | `/settings` | Saved confidence, required PPE, alert recipients/toggles/cooldowns, delivery-mode/SMTP configuration display, preview and manual test actions |
 
-No emergency-stop or PTZ controls are implemented or displayed. Camera resolution/FPS are not measured by the current schema; do not treat metadata-selection controls as applied capture settings or unavailable badges as measurements.
+No emergency-stop, PTZ, dead footer links or unsupported resolution/FPS controls are displayed. Camera resolution/FPS are not saved/applied by the current schema. The footer shows backend model/provider identity and actual health.
 
 ## Live view
 
@@ -44,7 +44,7 @@ Video views use `total_frames`, `frames_processed`, `worker_observations`, `max_
 
 `components/ViolationReview.jsx` shares Acknowledge, Escalate and Archive Evidence actions between history/detail and Dashboard incidents. The backend is authoritative for status/timestamps. Acknowledging an escalated record does not downgrade it. Archiving hides it from default history/recent incidents but retains evidence and the row; the archived-only filter exposes it.
 
-`api/violationReports.js` imports no mutation API. It requests every matching page using the current date/type/camera/review/archive filters. CSV escapes quotes/newlines and neutralizes spreadsheet-formula prefixes. PDF contains a count/PPE summary, table and available unique evidence thumbnails; missing images are labelled unavailable rather than aborting the report. Neither export calls the legacy delete endpoint.
+`api/violationReports.js` imports no mutation API. It requests every matching page using the current date/type/camera/review/archive filters. Dates use native date inputs so partial text is not sent as an invalid date; camera IDs use a numeric input. CSV escapes quotes/newlines and neutralizes spreadsheet-formula prefixes. PDF contains a count/PPE summary, table and available unique evidence thumbnails; missing images are labelled unavailable rather than aborting the report. Neither export calls a deletion API; the retired bulk-delete endpoint also rejects deletion with HTTP 405. Table/detail/share content uses the API's actual `source` field.
 
 ## Settings and alert previews
 

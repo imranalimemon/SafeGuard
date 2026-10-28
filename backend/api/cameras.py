@@ -363,23 +363,13 @@ async def _try_open(camera: Camera) -> dict:
     """Open cv2.VideoCapture in a thread to avoid blocking the event loop."""
 
     def _open():
-        url = camera.url or "0"
-        # Webcam rows store the index as a string ("0", "1", ...); cv2 wants int.
-        if camera.source_type == "webcam":
-            idx = int(url) if url.isdigit() else 0
-            # Prefer DirectShow on Windows — MSMF (the default) often returns
-            # `isOpened() == True` even when no device is present, which makes
-            # the test endpoint lie about success.
-            backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY
-            cap = cv2.VideoCapture(idx, backend)
-        else:
-            if camera.username and camera.password and "://" in url and "@" not in url.split("://", 1)[1]:
-                scheme, rest = url.split("://", 1)
-                url = f"{scheme}://{camera.username}:{camera.password}@{rest}"
-            cap = cv2.VideoCapture(url)
+        from detection.camera_capture import open_capture
+        cap = open_capture(camera)
         try:
-            ok = cap.isOpened()
-            return ok
+            if not cap.isOpened():
+                return False
+            ok, frame = cap.read()
+            return ok and frame is not None
         finally:
             cap.release()
 

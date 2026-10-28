@@ -1,35 +1,24 @@
-# SafeGuard AI — Improvement Suggestions
+# Remaining engineering and evaluation work
 
-Based on a deep review of the frontend, backend, database, and ML pipeline, here is a list of strategic improvements to take SafeGuard AI from a strong prototype to a production-grade enterprise system.
+This list reflects the current React/FastAPI/ONNX Runtime implementation. It is future work, not a list of implemented features. See [final QA](qa-report.md) for observed results.
 
-## 1. Machine Learning & Detection 🧠
+## Submission priorities
 
-> **Implement Object Tracking (DeepSORT / ByteTrack)**
-> Currently, the system evaluates every frame independently. If a worker stands in front of the camera for 10 seconds without a helmet, the system might see this as 300 distinct violations (at 30fps). By adding an object tracker, you can assign an ID to each worker and only flag *one* violation per continuous incident.
+1. Audit dataset leakage and duplicate images, split by source/video/session, then retrain only with explicit approval. Report independent per-class precision, recall, mAP, confusion matrices and failure cases. Existing metrics and the small sanity set are not final evaluation.
+2. Review real-model false negatives. In the final browser QA, `chv_test_00110` (uploaded as `multi_worker.webp`) showed visible helmets that the detector did not return at the unchanged 0.50 threshold. Geometry cannot associate a detection that is absent. Keep such examples in the defense/demo discussion.
+3. Gather consented real-site test videos across distance, occlusion, lighting and worker overlap. Measure detection latency, delivered frame age and end-to-end FPS on the target machine. Approximate CPU inference throughput is 2.7 FPS; frame skipping improves display continuity without creating extra detections.
+4. Preserve reproducible setup, screenshot-based user guidance, exact model identity and honest limitations. Rebuild a corrupt virtual environment instead of depending indefinitely on PATH fallback.
 
-- **Fine-Tune the YOLO Model:** The base YOLOv8s model is general-purpose. Fine-tuning the model on images specific to your actual environment (your lighting, camera angles, and specific uniform colors) will drastically reduce false positives and false negatives.
-- **Region of Interest (ROI) Masking:** Add a feature to let users draw "safe zones" or "danger zones" on the camera feed. The system would then only run detection inside the danger zones, saving compute power and avoiding alerts for people walking in the background.
+## Engineering after the verified core
 
-## 2. Backend Architecture & Performance ⚙️
+- Add authentication, role checks, TLS and protected evidence access before exposing the app. Camera credentials are currently plaintext in storage/responses.
+- Replace position-based deduplication with evaluated persistent tracking if moving/overlapping workers require it. The existing cooldown already suppresses similar worker boxes; it does not create an incident on every frame.
+- Evaluate a better face-visibility/orientation method. The current conservative frontal-face gate can fail; an unassessable mask is not compliance.
+- Add bounded persistent upload jobs, cancellation and durable progress if long videos require restart recovery. Current uploads run off the event loop, accept one active upload per process, and provide key frames rather than an encoded annotated video.
+- Consider a durable delivery queue/retry policy for production. Current SMTP/Twilio calls already run in worker threads with timeouts, result logs and per-worker/source/channel cooldowns. Preview mode blocks delivery independently of saved channel toggles.
+- Add better native webcam-stall recovery and measure realistic multi-camera load before offering simultaneous monitoring. Configured cameras and Dashboard switching already work.
+- Consider a different database/storage architecture only after measured SQLite contention or retention needs justify it. Keep DB/evidence backups coordinated.
+- Reduce the frontend's large bundle by lazy-loading report generation. The production build currently warns about a chunk over 500 kB.
+- Plan removal of Python/Pydantic/FastAPI deprecations before incompatible major-version upgrades.
 
-> **Migrate from SQLite to PostgreSQL**
-> SQLite is excellent for development, but in a busy environment with multiple cameras logging violations simultaneously, SQLite will suffer from database locks. Upgrading to PostgreSQL will handle high concurrency and massive historical data smoothly.
-
-- **Implement a Message Queue (Celery/Redis):** Right now, if the Twilio API or SMTP server hangs, it could slow down the detection pipeline. Offloading the alert logic to a background worker queue (like Celery with Redis) ensures the camera feed never stutters when sending emails.
-- **Upgrade Video Streaming to WebRTC:** Sending Base64 encoded JPEG strings over WebSockets works for prototypes, but it consumes massive bandwidth. Implementing WebRTC or generating an RTSP stream would reduce latency, lower CPU usage, and provide a much smoother video feed.
-- **Edge Inference:** If deploying to a real site, consider moving the YOLOv8 inference to an edge device (like an NVIDIA Jetson) and only sending the violation metadata and a single snapshot to the cloud backend.
-
-## 3. Security & Access Control 🔒
-
-> **Authentication & Authorization**
-> The current system has no login barrier. Anyone with the URL can view the live feed and change settings.
-
-- **Implement JWT Authentication:** Add a secure login screen using JSON Web Tokens (JWT).
-- **Role-Based Access Control (RBAC):** Create roles like `Admin` (can change settings and clear violations) and `Viewer` (can only watch the feed and see history).
-
-## 4. Frontend & User Experience 🎨
-
-- **Custom Date Range Picker:** The Violations page currently has static filters (Last 24 Hours, Last 7 Days). Adding a calendar date-picker would allow managers to pull reports for specific shifts or months.
-- **Camera Management:** The system currently assumes a single camera feed. You should add a "Cameras" configuration page to allow adding multiple IP camera RTSP URLs, and a dropdown on the Dashboard to switch between them (or view a multi-camera grid).
-- **Export Formats:** Expand the CSV export functionality on the Violations page to also support exporting PDF reports with the violation image thumbnails included.
-- **Progressive Web App (PWA):** Configure the Vite setup as a PWA so managers can install the dashboard on their phones like a native app and receive push notifications natively, reducing reliance on WhatsApp.
+CSV/PDF exports, review/archive workflow, camera CRUD/switching, upload results/downloads, persisted settings, real health and non-delivering email previews are implemented. Bulk violation deletion is disabled. None of the future work above authorizes sending alerts, deleting data or retraining automatically.

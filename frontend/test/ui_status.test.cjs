@@ -15,8 +15,10 @@ const result = esbuild.buildSync({
       export { default as Dashboard } from './src/pages/DashboardPage';
       export { default as Footer } from './src/components/layout/Footer';
       export { default as Violations } from './src/pages/ViolationsPage';
+      export { ViolationModal } from './src/pages/ViolationsPage';
       export { default as Cameras } from './src/pages/CamerasPage';
       export { CameraCard } from './src/pages/CamerasPage';
+      export { ConfigPanel } from './src/pages/CamerasPage';
       export { ReviewState, ReviewActions } from './src/components/ViolationReview';
       export { default as UploadResult } from './src/components/UploadResult';
       export { EmailPreview } from './src/components/EmailPreview';
@@ -51,6 +53,7 @@ assert.doesNotMatch(html, /Jetson|Orin|YOLOv8s/);
 html = render('Footer', online);
 assert.match(html, /Online/);
 assert.match(html, /custom_ppe\.onnx/);
+assert.doesNotMatch(html, /href="#"|Help Desk|Safety Protocols|System Logs/);
 assert.match(html, /CUDAExecutionProvider, CPUExecutionProvider/);
 assert.match(render('Footer', { ...online, state: 'degraded', db_connected: false }), /Degraded/);
 console.log('PASS: footer reflects offline/degraded/online health and supplied model/provider.');
@@ -67,6 +70,8 @@ assert.doesNotMatch(html, /0%|94%|CAM-02/);
 console.log('PASS: dashboard has no invented data offline or before the first live frame.');
 
 html = render('Violations', online);
+assert.equal((html.match(/type="date"/g) || []).length, 2);
+assert.match(html, /type="number" min="1" aria-label="Camera ID"/);
 assert.doesNotMatch(html, /SITE LOCATION|Sector 7G|Loading Bay A|Loading Bay B|Forge Area|Unauthorized Zone/);
 assert.match(render('Cameras', offline), /SYSTEM OFFLINE/);
 assert.match(render('Upload', offline), /Model not available/);
@@ -83,6 +88,22 @@ html = renderToStaticMarkup(React.createElement(components.CameraCard, {
 assert.match(html, /role="alert"/);
 assert.match(html, /Device index 99 unavailable/);
 console.log('PASS: camera card displays the actual failed test message.');
+assert.doesNotMatch(html, /1920.*1080|30 FPS|Resolution|Frame Rate/);
+html = renderToStaticMarkup(React.createElement(components.ConfigPanel, {
+  form: { name: 'Camera', source_type: 'ip', url: 'http://localhost', location: '', enabled: true },
+  formError: 'At most 120 characters', onChange: () => {},
+}));
+assert.match(html, /role="alert"/);
+assert.match(html, /At most 120 characters/);
+assert.doesNotMatch(html, /Resolution|Frame Rate|1920.*1080|30 FPS/);
+html = renderToStaticMarkup(React.createElement(components.ViolationModal, {
+  violation: { id: 7, source: 'camera:42', missing_ppe: 'Helmet', review_status: 'open' },
+  onClose: () => {}, onAction: () => {},
+}));
+assert.match(html, /SOURCE/);
+assert.match(html, /camera:42/);
+assert.ok(decodeURIComponent(html.match(/href="(https:\/\/api\.whatsapp\.com\/send[^\"]+)"/)[1]).includes('*Camera:* camera:42'));
+console.log('PASS: violation detail and quick-share use the actual API source.');
 
 html = renderToStaticMarkup(React.createElement(components.ReviewState, { violation: {
   review_status: 'escalated', acknowledged_at: '2026-10-27T12:00:00', escalated_at: '2026-10-27T12:01:00', archived_at: '2026-10-27T12:02:00', mask_assessment: 'not assessable',

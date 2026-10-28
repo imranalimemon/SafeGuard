@@ -42,7 +42,7 @@ flowchart TD
     API -->|"review/archive; export GETs"| DB
 ```
 
-Detailed references: [backend](docs/backend.md), [frontend](docs/frontend.md), [database](docs/database.md), [ML/rules/alerts](docs/ml-violations-alerts.md), [API contract](docs/backend_api_contract.md).
+Detailed references: [backend](docs/backend.md), [frontend](docs/frontend.md), [database](docs/database.md), [ML/rules/alerts](docs/ml-violations-alerts.md), [API contract](docs/backend_api_contract.md), [illustrated user guide](docs/user-guide.md), [final QA evidence](docs/qa-report.md).
 
 ## Clean-machine setup
 
@@ -92,7 +92,7 @@ Install OS camera permissions/drivers and OpenCV runtime libraries required by y
 
 ### Daily startup and shutdown
 
-After setup, **one command** starts both services: `.\start.bat` on Windows, or `bash ./start.sh` on Linux/macOS. The launchers locate their own checkout, prefer `.venv`, then `backend/.venv`, then legacy `backend/venv`, and otherwise use Python on PATH. They check dependencies but do not install packages automatically.
+After setup, **one command** starts both services: `.\start.bat` on Windows, or `bash ./start.sh` on Linux/macOS. The launchers locate their own checkout, prefer `.venv`, then `backend/.venv`, then legacy `backend/venv`, and otherwise use Python on PATH. If that environment cannot import the backend runtime, they warn and retry the original PATH Python. If neither works, startup fails before launching either server. They do not install packages automatically. Recreate a broken environment using the setup commands; fallback does not repair it.
 
 Both services share one foreground terminal with labelled logs. Open **http://127.0.0.1:5173**; API/Swagger are **http://127.0.0.1:8000/api/health** and **http://127.0.0.1:8000/docs**. Press **Ctrl+C** to stop both. `concurrently --kill-others` stops the peer when either process exits. Port conflicts are errors; Vite is not allowed to silently choose another port. Startup messages are not a readiness guarantee: read errors and check health.
 
@@ -129,7 +129,7 @@ Preview first in Settings or a violation's detail view. Preview GETs return cont
 ## First-use check
 
 1. Check `/api/health` for a loaded model, actual provider and reachable database. An unconfigured SMTP server must not be described as connection-tested.
-2. Add a camera, click Test, then select it in Dashboard and Start. The test endpoint checks capture opening; the live stream also detects failed reads. Camera testing may fail while another application owns the webcam.
+2. Add a camera, click Test, then select it in Dashboard and Start. The test endpoint requires both capture opening and one decoded frame. Network capture open/read operations have three-second FFmpeg timeouts; hardware drivers have their own behaviour. Camera testing may fail while another application owns the webcam. Resolution/FPS controls are absent because those values are not saved or applied.
 3. Upload an image and short video; inspect worker states and download the annotation/key frames.
 4. Filter Violations, export CSV/PDF, and compare the export count with all matching records, not only the displayed page. Acknowledge/Escalate, refresh, and check timestamps. Archive a record, then use **Archived evidence only** to find it.
 5. Save settings and restart against the **same** database. Confirm values persist. Keep preview delivery enabled while checking alert content.
@@ -140,6 +140,7 @@ From the root, with the backend virtual environment active:
 
 ```bash
 python -B -W ignore::DeprecationWarning -m unittest backend.test_detection_model backend.test_ppe_association backend.test_ppe_defaults backend.test_status backend.test_live_stream backend.test_mask_visibility backend.test_violation_workflow backend.test_uploads backend.test_saved_settings backend.test_alerts
+python -B -m unittest backend.test_camera_capture backend.test_launchers
 node --test frontend/test/live_stream.test.mjs frontend/test/violation_reports.test.mjs frontend/test/uploads.test.mjs
 node frontend/test/ui_status.test.cjs
 ```
@@ -150,10 +151,10 @@ These selected suites use synthetic inputs and disposable databases; alert tests
 
 ## Limitations and evaluation status
 
-- CPU inference is roughly 2-3 detections/second on the development machine, not a guaranteed live-video rate. One 12-image check measured about 338 ms/image for detection only. Face checks, encoding and storage add work. The stream sends newer frames with cached boxes; boxes can lag motion. Frame skipping can miss short events.
+- CPU inference is roughly 2.7 detections/second on the development machine, not a guaranteed live-video rate. One earlier 12-image check measured about 338 ms/image for detection only; timings vary with workload. Face checks, encoding and storage add work. Default frame skipping is three; the stream sends newer frames with cached boxes, which can lag motion. Frame skipping can miss short events.
 - Missing masks are assessed only with sufficiently large, plausibly frontal faces. Haar frontal-face detection is a heuristic; obscured, side/back-facing or distant faces often remain unassessable. Such workers are not counted as fully compliant when no other PPE violation exists.
 - PPE association and cooldown identity use geometry/position, not persistent tracking or re-identification. Overlapping/moving workers and camera motion can cause wrong associations, duplicate records or suppression.
 - Video worker counts are observations per analyzed frame, not unique workers. Full annotated video encoding and persistent upload jobs/progress percentages are not implemented.
 - Final accuracy, precision/recall, per-class mAP and generalization claims are **pending leakage-free retraining and independent held-out evaluation**. Audit duplicates and split by source/video/session before retraining; report per-class results, false positives, occlusion/distance/lighting tests and real-site videos. Do not present old training metrics or the 12-image check as final evidence.
-- This is not a safety-certified control system. The API currently has no authentication/role enforcement; camera credentials are stored/returned in plaintext, and a destructive legacy delete endpoint still exists. Keep it local or behind appropriate access controls. There is no operational emergency-stop or PTZ capability.
+- This is not a safety-certified control system. The API currently has no authentication/role enforcement; camera credentials are stored/returned in plaintext. Keep it local or behind appropriate access controls. Bulk violation deletion is disabled with HTTP 405; review/archive/export preserve records. There is no operational emergency-stop or PTZ capability.
 - SQLite/filesystem storage, in-memory cooldowns (reset on restart), one selected feed per Dashboard and no complete camera-stall recovery limit deployment scale. Back up the database and evidence together; follow [database guidance](docs/database.md).

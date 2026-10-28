@@ -31,7 +31,8 @@ Saved confidence/PPE/recipient/toggle/cooldown values override initial environme
 | `api/upload.py` | Validated sync upload handlers, FastAPI worker-pool processing, temp cleanup, result/record creation |
 | `api/violations.py` | Filtered reads, review/archive updates, email preview and manual WhatsApp share |
 | `api/settings.py`, `runtime_settings.py` | Validated save/read/restore, one-channel manual test and test-email preview |
-| `api/cameras.py` | CRUD, capture-open test, local webcam and ONVIF discovery |
+| `api/cameras.py` | CRUD, open-plus-decoded-frame test, local webcam and ONVIF discovery |
+| `detection/camera_capture.py` | Shared capture opening; three-second FFmpeg open/read timeouts for network/video sources |
 | `api/stats.py` | Counts/aggregations from actual violation rows, recent unarchived incidents |
 | `websocket/live.py` | Dedicated capture thread, latest-frame slot, sampled inference and display-ACK flow |
 | `websocket/manager.py` | Camera lookup, annotation/encoding, persistence and alert scheduling |
@@ -61,4 +62,6 @@ Only confirmed violations are inserted into `violations`; unknown-mask-only work
 
 SMTP/Twilio and log writes use worker threads. The process delivery-mode gate is checked before constructing clients. Preview attempts may be logged as `preview` by automatic alert flow; dedicated preview GETs are read-only. Live SMTP acceptance and its log/`alert_sent` flag are committed together; database failures are explicitly reported. See [ML and alerts](ml-violations-alerts.md).
 
-The launchers are local development processes, not a production reverse proxy, service manager, authentication layer or TLS setup. WebSocket, HTTP and screenshot routes must be protected before exposing the app beyond a trusted machine/network. Camera tests currently establish `isOpened()` only; a successful test is not proof of continuing frame delivery.
+The launchers are local development processes, not a production reverse proxy, service manager, authentication layer or TLS setup. WebSocket, HTTP and screenshot routes must be protected before exposing the app beyond a trusted machine/network. Camera tests require `isOpened()` and one decoded frame and always release the capture. A successful test is not proof of continuing frame delivery. Both camera tests and live streams use the shared bounded network capture helper; native webcam drivers can still stall.
+
+Bulk `DELETE /api/violations` is retired and always returns HTTP 405 without issuing deletion SQL. Use review/archive actions instead. [Browser QA](qa-report.md) used only a disposable backup copy and preview delivery.

@@ -47,7 +47,7 @@ const WhatsAppSharePanel = ({ violation }) => {
     const id = violation.id ? `EV-${violation.id}` : 'N/A';
     const missing = violation.missing_ppe || violation.violation_type || 'Unknown';
     const ts = violation.timestamp ? new Date(violation.timestamp).toLocaleString() : 'N/A';
-    const cam = violation.camera_id || violation.camera_name || 'N/A';
+    const cam = violation.source || violation.camera_id || violation.camera_name || 'N/A';
     const conf = violation.confidence != null ? `${Math.round(violation.confidence * 100)}%` : 'N/A';
     const text = [
       `🚨 *SafeGuard AI — PPE Violation Alert*`,
@@ -206,7 +206,7 @@ const WhatsAppSharePanel = ({ violation }) => {
 };
 
 /* ── Detail Modal ────────────────────────────────────────── */
-const ViolationModal = ({ violation, onClose, onAction, busy }) => {
+export const ViolationModal = ({ violation, onClose, onAction, busy }) => {
   if (!violation) return null;
 
   return (
@@ -253,7 +253,7 @@ const ViolationModal = ({ violation, onClose, onAction, busy }) => {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: 'CONFIDENCE', value: violation.confidence != null ? `${Math.round(violation.confidence * 100)}%` : '—', color: '#FF6B00' },
-                { label: 'CAMERA ID', value: violation.camera_id || violation.camera_name || '—', color: 'var(--color-on-surface)' },
+                { label: 'SOURCE', value: violation.source || violation.camera_id || violation.camera_name || '—', color: 'var(--color-on-surface)' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
                   <div className="font-data-label mb-1" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>{label}</div>
@@ -394,7 +394,8 @@ const ViolationsPage = () => {
                   <div key={i} className="relative">
                     <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--color-on-surface-variant)', fontSize: '14px' }}>calendar_month</span>
                     <input
-                      type="text"
+                      type="date"
+                      aria-label={placeholder}
                       value={val}
                       onChange={(e) => set(e.target.value)}
                       placeholder={placeholder}
@@ -423,7 +424,9 @@ const ViolationsPage = () => {
             <div>
               <label className="block font-data-label mb-2" style={{ color: 'var(--color-on-surface-variant)', fontSize: '10px' }}>CAMERA ID</label>
               <input
-                type="text"
+                type="number"
+                min="1"
+                aria-label="Camera ID"
                 value={cameraId}
                 onChange={(e) => setCameraId(e.target.value)}
                 placeholder="Numeric camera ID, e.g. 1"
@@ -471,7 +474,7 @@ const ViolationsPage = () => {
             <div className="flex gap-2">
               <button disabled={busy || isLoading} onClick={() => exportReport('csv')}>Export CSV</button>
               <button disabled={busy || isLoading} onClick={() => exportReport('pdf')}>Export PDF Report</button>
-              {busy && <span role="status">Processing?</span>}
+              {busy && <span role="status">Processing...</span>}
             </div>
           </div>
 
@@ -520,7 +523,7 @@ const ViolationsPage = () => {
                         <td className="p-3" style={{ fontSize: '12px' }}>{v.timestamp ? new Date(v.timestamp).toLocaleString() : '—'}</td>
                         <td className="p-3"><ViolationBadge type={v.violation_type || 'Unknown'} /></td>
                         <td className="p-3" style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>
-                          {v.camera_id || v.camera_name || '—'}
+                          {v.source || v.camera_id || v.camera_name || '—'}
                           {v.location_name && <><br /><span style={{ fontSize: '11px', color: 'var(--color-on-surface-variant)', opacity: 0.8 }}>{v.location_name}</span></>}
                         </td>
                         <td className="p-3">

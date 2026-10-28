@@ -204,9 +204,7 @@ def preview_violation_email(violation_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/api/violations")
 def clear_violations(db: Session = Depends(get_db)):
-    db.query(Violation).delete()
-    db.commit()
-    return {"status": "ok", "message": "All violations deleted"}
+    raise HTTPException(status_code=405, detail="Violation deletion is disabled. Archive evidence instead.")
 
 
 # ── Manual WhatsApp Share ─────────────────────────────────────────────────────

@@ -36,7 +36,6 @@ export const sendTestEmail = () => client.post('/settings/alerts/test-email');
 export const previewTestEmail = () => client.get('/settings/alerts/preview-email');
 export const previewViolationEmail = id => client.get(`/violations/${id}/preview/email`);
 export const sendTestWhatsApp = () => client.post('/settings/alerts/test-whatsapp');
-export const clearViolations = () => client.delete('/violations');
 // Manually share a specific violation via WhatsApp (Twilio). `data` is optional
 // and may include `{ phone_number }` to override the globally configured number.
 // It bypasses the channel toggle; process-level preview mode still blocks delivery.

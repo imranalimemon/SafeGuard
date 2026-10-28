@@ -50,7 +50,7 @@ const StatTile = ({ label, value, accent = false }) => (
 const IncidentItem = ({ violation, onAction, busy }) => (
   <div className="p-3" style={{ borderBottom: '1px solid var(--color-outline-variant)' }}>
     <div>{violation.violation_type}</div>
-    <div>{violation.source || 'Source not available'} ? {violation.timestamp} UTC</div>
+      <div>{violation.source || 'Source not available'} | {violation.timestamp} UTC</div>
     <ReviewState violation={violation} />
     <ReviewActions violation={violation} onAction={onAction} busy={busy} />
   </div>

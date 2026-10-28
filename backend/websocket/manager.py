@@ -52,24 +52,9 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-def _build_capture(camera: Camera) -> cv2.VideoCapture:
-    """Resolve a Camera row to an open cv2.VideoCapture. Caller is responsible
-    for releasing it."""
-    if camera.source_type == "webcam":
-        # url stores the integer index as a string; default to 0.
-        idx = int(camera.url) if (camera.url and camera.url.isdigit()) else 0
-        # Prefer DirectShow on Windows — MSMF (the default) often returns
-        # `isOpened() == True` even when no real device is present, which
-        # makes the live stream silently show a black/empty frame.
-        backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY
-        return cv2.VideoCapture(idx, backend)
-    # ip / rtsp — inject credentials if the row carries them and the URL
-    # doesn't already include them.
-    url = camera.url or ""
-    if camera.username and camera.password and "://" in url and "@" not in url.split("://", 1)[1]:
-        scheme, rest = url.split("://", 1)
-        url = f"{scheme}://{camera.username}:{camera.password}@{rest}"
-    return cv2.VideoCapture(url)
+def _build_capture(camera: Camera):
+    from detection.camera_capture import open_capture
+    return open_capture(camera)
 
 
 def _write_violations(camera: Camera, frame, detections, violations) -> tuple[int, list[dict]]:

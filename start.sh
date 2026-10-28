@@ -19,6 +19,7 @@ if [[ ! -f frontend/node_modules/vite/bin/vite.js ]]; then
     exit 1
 fi
 
+SG_ORIGINAL_PATH="$PATH"
 PYTHON=""
 for candidate in .venv/bin/activate backend/.venv/bin/activate backend/venv/bin/activate; do
     if [[ -f "$candidate" ]]; then
@@ -37,9 +38,15 @@ if [[ -z "$PYTHON" ]]; then
     else echo "[ERROR] Python is missing. Create .venv and install backend requirements." >&2; exit 1
     fi
 fi
-if ! "$PYTHON" -B -m uvicorn --version >/dev/null 2>&1; then
-    echo "[ERROR] The selected Python has no Uvicorn. Install backend/requirements.txt in its environment." >&2
-    exit 1
+if ! "$PYTHON" -B -c 'import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator' >/dev/null 2>&1; then
+    echo "[WARNING] Preferred virtual environment cannot load the backend runtime. Trying original PATH Python." >&2
+    export PATH="$SG_ORIGINAL_PATH"
+    unset VIRTUAL_ENV
+    if command -v python3 >/dev/null 2>&1; then PYTHON=python3; else PYTHON=python; fi
+    if ! "$PYTHON" -B -c 'import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator' >/dev/null 2>&1; then
+        echo "[ERROR] Backend runtime dependencies are missing. Install backend/requirements.txt in a working Python environment." >&2
+        exit 1
+    fi
 fi
 
 export ALERT_DELIVERY_MODE="${ALERT_DELIVERY_MODE:-preview}"

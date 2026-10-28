@@ -22,6 +22,7 @@ if not exist "frontend\node_modules\vite\bin\vite.js" (
     exit /b 1
 )
 
+set "SG_ORIGINAL_PATH=%PATH%"
 if exist ".venv\Scripts\activate.bat" (
     call ".venv\Scripts\activate.bat"
 ) else if exist "backend\.venv\Scripts\activate.bat" (
@@ -34,13 +35,19 @@ if errorlevel 1 (
     echo [ERROR] Python is missing. Create .venv and install backend requirements.
     exit /b 1
 )
-call python -B -m uvicorn --version >nul 2>nul
+call python -B -c "import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator" >nul 2>nul
 if errorlevel 1 (
-    echo [ERROR] The selected Python has no Uvicorn. Install backend/requirements.txt in its environment.
-    exit /b 1
+    echo [WARNING] Preferred virtual environment cannot load the backend runtime. Trying the original PATH Python.
+    set "PATH=%SG_ORIGINAL_PATH%"
+    set "VIRTUAL_ENV="
+    call python -B -c "import fastapi, uvicorn, cv2, onnxruntime, sqlalchemy, PIL, tzdata; from pydantic import model_validator" >nul 2>nul
+    if errorlevel 1 (
+        echo [ERROR] Backend runtime dependencies are missing. Install backend/requirements.txt in a working Python environment.
+        exit /b 1
+    )
 )
 
-REM The process environment takes precedence over backend/.env and saved DB toggles.
+REM Delivery mode is process-only; saved DB toggles cannot override preview.
 if not defined ALERT_DELIVERY_MODE set "ALERT_DELIVERY_MODE=preview"
 set "VITE_BACKEND_URL=http://127.0.0.1:8000"
 echo Starting backend http://127.0.0.1:8000 and frontend http://127.0.0.1:5173
