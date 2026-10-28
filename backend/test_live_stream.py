@@ -140,7 +140,8 @@ class StreamTests(unittest.IsolatedAsyncioTestCase):
         stream, cap = self.stream(broken)
         cap.frames.put(1)
         await until(lambda: stream.error)
-        self.assertIn('synthetic failure', stream.error)
+        self.assertIn('processing failed', stream.error)
+        self.assertNotIn('synthetic failure', stream.error)
 
     async def test_slow_viewer_has_one_frame_in_flight_then_gets_latest(self):
         socket = FakeSocket()
@@ -231,7 +232,8 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
     async def test_model_failure_sends_error_and_cleans_up_connection(self):
         self.detector.side_effect = RuntimeError('Synthetic model unavailable')
         await self.check_closed(4400)
-        self.assertIn('Synthetic model unavailable', self.socket.sent[0]['error'])
+        self.assertIn('processing failed', self.socket.sent[0]['error'])
+        self.assertNotIn('Synthetic model unavailable', self.socket.sent[0]['error'])
 
     async def test_camera_open_failure_sends_error_and_releases_capture(self):
         cap = FakeCapture(opened=False)

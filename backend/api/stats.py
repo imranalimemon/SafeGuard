@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 
 from db.database import get_db
 from db.models import Violation
@@ -12,7 +12,7 @@ router = APIRouter()
 def get_dashboard_stats(db: Session = Depends(get_db)):
     total_violations = db.query(Violation).count()
 
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).replace(tzinfo=None).date()
     today_start = datetime.combine(today, datetime.min.time())
     today_violations = db.query(Violation).filter(Violation.timestamp >= today_start).count()
 

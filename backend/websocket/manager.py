@@ -3,7 +3,7 @@ import asyncio
 import base64
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 import cv2
@@ -92,7 +92,7 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
                 screenshot_url = f"/screenshots/{screenshot_filename}"
 
             row = Violation(
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
                 violation_type=f"Missing: {', '.join(v['missing_ppe'])}",
                 person_count=len(violations),
                 violation_count=sum(1 for vv in violations if vv["status"] == "VIOLATION"),
@@ -212,7 +212,14 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
     except Exception as exc:
         print(f"[WS] {exc}")
         try:
-            message = str(exc) or "Camera not available: stream timed out"
+            safe_errors = {
+                "Camera not available: cannot open camera",
+                "Camera not available: camera stopped returning frames",
+                "Camera not available: capture failed",
+                "Camera not available: frame delivery timed out",
+                "Camera processing failed. Check the system log.",
+            }
+            message = str(exc) if str(exc) in safe_errors else "Camera not available: processing failed. Check the system log."
             await websocket.send_json({"error": message})
             await websocket.close(code=4400)
         except Exception:

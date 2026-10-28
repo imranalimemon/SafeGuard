@@ -38,7 +38,8 @@ class LatestFrameStream:
                     self.sequence += 1
                     self.frame = frame
         except Exception as exc:
-            self.error = f"Camera not available: {exc}"
+            reason = str(exc) if str(exc) in {"cannot open camera", "camera stopped returning frames"} else "capture failed"
+            self.error = f"Camera not available: {reason}"
         finally:
             if cap is not None:
                 cap.release()
@@ -65,7 +66,7 @@ class LatestFrameStream:
                 if self.on_result is not None:
                     await self.on_result(frame, result)
         except Exception as exc:
-            self.error = f"Camera processing failed: {exc}"
+            self.error = "Camera processing failed. Check the system log."
 
     async def close(self):
         self._stop.set()

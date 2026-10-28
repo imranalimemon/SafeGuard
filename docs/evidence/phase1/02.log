@@ -1,0 +1,7 @@
+COMMAND: C:\Users\imran\AppData\Local\Temp\safeguard-master-6ceo9ejc\venv\Scripts\python.exe -B -m unittest backend.test_camera_capture
+CWD: I:\AntiGRavity\SafeGuard
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.805s
+
+OK

@@ -18,8 +18,14 @@ class Settings:
     APP_ENV: str = os.getenv("APP_ENV", "development")
     APP_HOST: str = os.getenv("APP_HOST", "0.0.0.0")
     APP_PORT: int = int(os.getenv("APP_PORT", "8000"))
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key")
-    ALLOWED_ORIGINS: list = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    ALLOWED_ORIGINS: list = [value.strip().rstrip('/') for value in os.getenv(
+        "ALLOWED_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173").split(',') if value.strip()]
+    if not ALLOWED_ORIGINS or any('*' in origin or not origin.startswith(('http://', 'https://')) for origin in ALLOWED_ORIGINS):
+        raise ValueError('ALLOWED_ORIGINS must contain explicit HTTP(S) frontend origins.')
+    ADMIN_USERNAME: str = os.getenv('SAFEGUARD_ADMIN_USERNAME', 'admin')
+    ADMIN_PASSWORD: str = os.getenv('SAFEGUARD_ADMIN_PASSWORD', '')
+    CREDENTIAL_KEY: str = os.getenv('SAFEGUARD_CREDENTIAL_KEY', '')
+    COOKIE_SECURE: bool = os.getenv('SAFEGUARD_COOKIE_SECURE', 'false').lower() == 'true'
 
     # ── Model ──
     MODEL_PATH: str = os.getenv("MODEL_PATH", "best.onnx")

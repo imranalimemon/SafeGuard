@@ -11,6 +11,7 @@ const root = path.resolve(__dirname, '..');
 const result = esbuild.buildSync({
   stdin: {
     contents: `
+      export { LoginForm } from './src/context/Auth';
       export { SystemHealthContext } from './src/context/SystemHealth';
       export { default as Dashboard } from './src/pages/DashboardPage';
       export { default as Footer } from './src/components/layout/Footer';
@@ -152,3 +153,11 @@ html = renderToStaticMarkup(React.createElement(components.EmailPreview, { previ
 assert.match(html, /Nothing was sent/); assert.match(html, /configured@example.invalid/);
 assert.match(html, /annotated.jpg/); assert.match(html, /download="safeguard-email-preview.eml"/);
 console.log('PASS: email preview shows recipient, exact content, attachment and downloadable MIME without sending.');
+
+html = renderToStaticMarkup(React.createElement(components.LoginForm, { onLogin: () => {}, error: 'Invalid username or password.', busy: true }));
+assert.match(html, /type="password"/);
+assert.match(html, /autoComplete="current-password"/);
+assert.match(html, /for="login-password"/);
+assert.match(html, /role="alert"/);
+assert.match(html, /disabled=""/);
+console.log('PASS: login has labelled password fields, error status and busy state.');

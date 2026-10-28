@@ -1,7 +1,7 @@
 export function cameraUpdatePayload(form) {
   // A blank, unexposed password field is not an instruction to erase credentials.
-  const { password, ...fields } = form;
-  return password ? { ...fields, password } : fields;
+  const { username, password, ...fields } = form;
+  return { ...fields, ...(username && { username }), ...(password && { password }) };
 }
 
 export function cameraErrorMessage(error, fallback = 'Camera request failed.') {

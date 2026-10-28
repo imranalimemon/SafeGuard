@@ -1,0 +1,4 @@
+COMMAND: fresh temp venv python -m pip install -r backend/requirements.txt --report pip-install-report.json; python -m pip check
+No broken requirements found.
+3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]
+OpenCV distributions: ['opencv-python']

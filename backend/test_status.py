@@ -1,5 +1,5 @@
 """Health and statistics checks with a fake model and in-memory SQLite only."""
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from types import ModuleType, SimpleNamespace
 import sys
 import unittest
@@ -83,8 +83,8 @@ class BackendStatusTests(unittest.TestCase):
     def test_statistics_use_stored_records_without_inventing_worker_totals(self):
         with self.database.SessionLocal() as db:
             db.add_all([
-                self.models.Violation(timestamp=datetime.utcnow(), confidence=0.8, missing_ppe="Helmet", source="camera:8"),
-                self.models.Violation(timestamp=datetime.utcnow() - timedelta(days=2), confidence=None, missing_ppe="Safety Vest", source="image_upload"),
+                self.models.Violation(timestamp=datetime.now(timezone.utc).replace(tzinfo=None), confidence=0.8, missing_ppe="Helmet", source="camera:8"),
+                self.models.Violation(timestamp=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=2), confidence=None, missing_ppe="Safety Vest", source="image_upload"),
             ])
             db.commit()
             result = self.stats.get_dashboard_stats(db=db)

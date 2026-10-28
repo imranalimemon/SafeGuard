@@ -1,5 +1,5 @@
 import json
-from datetime import date as _date, datetime
+from datetime import date as _date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -167,7 +167,7 @@ def review_violation(violation_id: int, update: ReviewUpdate, db: Session = Depe
     row = db.query(Violation).filter(Violation.id == violation_id).first()
     if row is None:
         raise HTTPException(status_code=404, detail="Violation not found")
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if update.action == "archive":
         row.archived_at = row.archived_at or now
     elif update.action == "acknowledge":

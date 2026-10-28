@@ -4,6 +4,17 @@ const client = axios.create({
   baseURL: '/api',
 });
 
+export function setCsrfToken(token) {
+  if (token) client.defaults.headers.common['X-CSRF-Token'] = token;
+  else delete client.defaults.headers.common['X-CSRF-Token'];
+}
+client.interceptors.response.use(response => response, error => {
+  if (error.response?.status === 401 && error.config?.url !== '/auth/login' && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('safeguard-session-expired'));
+  }
+  return Promise.reject(error);
+});
+
 export const getHealth = (config = {}) => client.get('/health', { timeout: 3000, ...config });
 export const getDashboardStats = () => client.get('/stats/dashboard');
 export const getViolations = (params) => client.get('/violations', { params });

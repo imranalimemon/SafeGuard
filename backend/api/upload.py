@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import threading
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import cv2
 from PIL import Image, UnidentifiedImageError
@@ -125,7 +125,7 @@ def _record(db, tasks, source, filename, frame_number, frame, detections, worker
     url, disk = image
     rows = []
     for worker in accepted:
-        row = Violation(timestamp=datetime.utcnow(),
+        row = Violation(timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
             violation_type=f"Missing: {', '.join(worker['missing_ppe'])}",
             person_count=len(workers), violation_count=len(pending), screenshot_path=url,
             confidence=worker['confidence'], missing_ppe=', '.join(worker['missing_ppe']),

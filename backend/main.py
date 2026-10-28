@@ -1,9 +1,11 @@
 """
 SafeGuard AI — FastAPI Main Application
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 import os, sys, logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -14,42 +16,59 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import settings
 from db.database import engine, Base, ensure_violation_columns, ensure_alert_settings_columns, ensure_alert_log_columns, SessionLocal
 from db.models import AlertSettings
+from db import models as db_models
 from runtime_settings import restore_settings
 from starlette.concurrency import run_in_threadpool
 from api import health, upload, violations, stats
 from api import settings as api_settings
 from api import cameras
 from websocket.manager import router as websocket_router
+from security import AuthService, AccessMiddleware, router as auth_router
+from evidence import router as evidence_router
 
-# Create database tables (fresh installs)
-Base.metadata.create_all(bind=engine)
+auth_service = AuthService(SessionLocal, db_models, settings)
 
-# Idempotent column-level migration for legacy safeguard.db files
-# (no Alembic at this milestone — see db/database.py for details).
-ensure_violation_columns(engine)
-ensure_alert_settings_columns(engine)
-ensure_alert_log_columns(engine)
+
+def initialize_storage():
+    Base.metadata.create_all(bind=engine)
+    ensure_violation_columns(engine)
+    ensure_alert_settings_columns(engine)
+    ensure_alert_log_columns(engine)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    await run_in_threadpool(initialize_storage)
+    await startup_event()
+    await run_in_threadpool(auth_service.bootstrap)
+    try:
+        yield
+    finally:
+        await shutdown_event()
 
 app = FastAPI(
     title="SafeGuard AI API",
     description="Real-time PPE Detection & Safety Compliance System",
-    version="1.0.0"
+    version="1.0.0", lifespan=lifespan, debug=False
 )
+app.state.auth = auth_service
+app.add_middleware(AccessMiddleware, service=auth_service)
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-CSRF-Token"],
 )
 
 # Ensure dirs exist
 os.makedirs(settings.SCREENSHOT_DIR, exist_ok=True)
 
-# Serve screenshots
-app.mount("/screenshots", StaticFiles(directory=settings.SCREENSHOT_DIR), name="screenshots")
+# Evidence routes are protected by the same session middleware as the API.
+app.include_router(auth_router)
+app.include_router(evidence_router)
 
 # Include routers
 app.include_router(health.router)
@@ -60,7 +79,6 @@ app.include_router(api_settings.router)
 app.include_router(cameras.router)
 app.include_router(websocket_router)
 
-@app.on_event("startup")
 async def startup_event():
     await run_in_threadpool(restore_settings, SessionLocal, AlertSettings, settings)
     print("=" * 50)
@@ -80,9 +98,21 @@ async def startup_event():
     print("=" * 50)
 
 
-@app.on_event("shutdown")
 async def shutdown_event():
-    pass
+    await run_in_threadpool(engine.dispose)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    # Pydantic's input/context fields can echo passwords and other secret values.
+    return JSONResponse({'detail': [{'loc': e['loc'], 'msg': e['msg'], 'type': e['type']}
+                                    for e in exc.errors()]}, status_code=422)
+
+
+@app.exception_handler(Exception)
+async def internal_error(request: Request, exc: Exception):
+    logger.error('Request failed: %s', type(exc).__name__, exc_info=True)
+    return JSONResponse({'detail': 'The request failed. Check the system log and retry.'}, status_code=500)
 
 @app.get("/")
 async def root():

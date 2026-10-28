@@ -1,0 +1,91 @@
+[
+  {
+    "command": [
+      "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "backend.test_detection_model",
+      "backend.test_ppe_association",
+      "backend.test_ppe_defaults",
+      "backend.test_status",
+      "backend.test_live_stream",
+      "backend.test_mask_visibility",
+      "backend.test_violation_workflow",
+      "backend.test_uploads",
+      "backend.test_saved_settings",
+      "backend.test_alerts"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\01.log"
+  },
+  {
+    "command": [
+      "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "backend.test_camera_capture"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\02.log"
+  },
+  {
+    "command": [
+      "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "backend.test_launchers"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\03.log"
+  },
+  {
+    "command": [
+      "C:\\Users\\imran\\AppData\\Local\\Temp\\safeguard-master-6ceo9ejc\\venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "backend.test_security"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\04.log"
+  },
+  {
+    "command": [
+      "node",
+      "--test",
+      "test\\camera_form.test.mjs",
+      "test\\live_stream.test.mjs",
+      "test\\uploads.test.mjs",
+      "test\\violation_reports.test.mjs"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard\\frontend",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\05.log"
+  },
+  {
+    "command": [
+      "node",
+      "test/ui_status.test.cjs"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard\\frontend",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\06.log"
+  },
+  {
+    "command": [
+      "node",
+      "node_modules/vite/bin/vite.js",
+      "build"
+    ],
+    "cwd": "I:\\AntiGRavity\\SafeGuard\\frontend",
+    "exit_code": 0,
+    "log": "docs\\evidence\\phase1\\07.log"
+  }
+]

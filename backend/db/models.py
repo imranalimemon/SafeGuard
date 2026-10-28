@@ -2,11 +2,25 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Foreig
 import datetime
 from db.database import Base
 
+
+class AdminUser(Base):
+    __tablename__ = 'admin_users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+
+
+class AuthSession(Base):
+    __tablename__ = 'auth_sessions'
+    token_hash = Column(String, primary_key=True)
+    user_id = Column(Integer, ForeignKey('admin_users.id'), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+
 class Violation(Base):
     __tablename__ = "violations"
 
     id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None))
     violation_type = Column(String)
     person_count = Column(Integer)
     violation_count = Column(Integer)
@@ -84,4 +98,4 @@ class Camera(Base):
     password = Column(String, nullable=True)
     location = Column(String, nullable=True)
     enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None))

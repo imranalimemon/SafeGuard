@@ -18,7 +18,7 @@ choosing the debug path.
 import asyncio
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from email import message_from_bytes
 from email.policy import default as default_policy
 
@@ -37,7 +37,7 @@ def log_alert(channel: str, payload: dict, subject: str = None, body: str = None
     concurrent writers from interleaving bytes."""
     try:
         os.makedirs(os.path.dirname(settings.DEBUG_LOG_FILE) or ".", exist_ok=True)
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         subject_line = subject or f"[{channel}] SafeGuard AI alert"
         body_lines = [
             f"=== {timestamp} | channel={channel} ===",

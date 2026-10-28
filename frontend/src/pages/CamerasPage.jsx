@@ -190,10 +190,19 @@ export const ConfigPanel = ({ camera, form, onChange, onClose, onSave, isSubmitt
               />
             </div>
             {form.source_type !== 'webcam' && (
+              <>
               <div className="flex flex-col gap-1">
                 <Label>Stream URL (HTTP / RTSP)</Label>
                 <TextInput value={form.url} onChange={(e) => onChange('url', e.target.value)} placeholder="rtsp://user:pass@192.168.1.x:554/stream1" />
               </div>
+              <div className="flex flex-col gap-1">
+                <Label>Camera username</Label>
+                <TextInput value={form.username || ''} onChange={e => onChange('username', e.target.value)} placeholder="Camera username (optional)" />
+                <Label>Camera password</Label>
+                <TextInput type="password" value={form.password || ''} onChange={e => onChange('password', e.target.value)} placeholder="Camera password (optional)" />
+                {camera?.has_credentials && <p>Credentials saved. Leave blank to keep them.</p>}
+              </div>
+              </>
             )}
             <div className="flex flex-col gap-1">
               <Label>Location</Label>

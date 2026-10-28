@@ -25,7 +25,11 @@ import struct
 import sys
 import xml.etree.ElementTree as ET
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+try:
+    from credentials import public_url, protect_camera, reveal
+except ModuleNotFoundError:
+    from backend.credentials import public_url, protect_camera, reveal
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -79,13 +83,12 @@ class CameraOut(BaseModel):
     name: str
     source_type: str
     url: Optional[str]
-    username: Optional[str]
+    has_credentials: bool
     location: Optional[str]
     enabled: bool
     created_at: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 def _serialize(c: Camera) -> dict:
@@ -94,9 +97,8 @@ def _serialize(c: Camera) -> dict:
         "id": c.id,
         "name": c.name,
         "source_type": c.source_type,
-        "url": c.url,
-        "username": c.username,
-        "password": c.password,  # included for completeness in this FYP; UI should mask it
+        "url": public_url(c.url),
+        "has_credentials": bool(c.username or c.password),
         "location": c.location,
         "enabled": c.enabled,
         "created_at": c.created_at.isoformat() if c.created_at else None,
@@ -111,6 +113,19 @@ def _validate_url_for_source(body: dict) -> None:
         raise HTTPException(status_code=422, detail=f"url is required for source_type={src}")
     if src == "webcam" and not url:
         body["url"] = "0"
+    url = reveal(body.get('url')) or '0'
+    if src == 'webcam' and (not url.isdigit() or int(url) > 64):
+        raise HTTPException(422, 'Webcam index must be an integer from 0 to 64.')
+    if src in ('ip', 'rtsp'):
+        from urllib.parse import urlsplit
+        try:
+            parsed = urlsplit(url)
+            valid = parsed.scheme in ('http', 'https', 'rtsp', 'rtsps') and bool(parsed.hostname)
+            parsed.port
+        except ValueError:
+            valid = False
+        if not valid:
+            raise HTTPException(422, 'Use an HTTP(S) or RTSP(S) camera URL with a host.')
 
 
 @router.get("/api/cameras")
@@ -125,7 +140,7 @@ def create_camera(payload: CameraCreate, db: Session = Depends(get_db)) -> dict:
     _validate_url_for_source(data)
     if db.query(Camera).filter(Camera.name == data["name"]).first():
         raise HTTPException(status_code=409, detail=f"Camera name '{data['name']}' already exists")
-    cam = Camera(**data)
+    cam = Camera(**protect_camera(data))
     db.add(cam)
     db.commit()
     db.refresh(cam)
@@ -339,10 +354,16 @@ def update_camera(camera_id: int, payload: CameraUpdate, db: Session = Depends(g
     data = payload.model_dump(exclude_unset=True)
     if not data:
         return _serialize(cam)
+    # Preserve hidden URL credentials/query tokens when the displayed URL is unchanged.
+    if data.get('url') == public_url(cam.url):
+        data.pop('url', None)
+    for secret in ('username', 'password'):
+        if not data.get(secret):
+            data.pop(secret, None)
     # Re-validate url/source_type if either changed.
     merged = {**{c.name: getattr(cam, c.name) for c in cam.__table__.columns}, **data}
     _validate_url_for_source(merged)
-    for k, v in data.items():
+    for k, v in protect_camera(data).items():
         setattr(cam, k, v)
     db.commit()
     db.refresh(cam)

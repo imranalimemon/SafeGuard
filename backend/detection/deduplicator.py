@@ -17,7 +17,7 @@ Design notes:
   not per-violation). Both serve different purposes and stack safely.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Lock
 from typing import Dict, List, Optional, Tuple
 
@@ -70,7 +70,7 @@ class ViolationDeduplicator:
             # A violation with no missing PPE is "COMPLIANT" — never logged.
             return False
         key = (source, tuple(sorted(missing_ppe)), tuple(person_bbox))
-        current = now or datetime.utcnow()
+        current = now or datetime.now(timezone.utc).replace(tzinfo=None)
         # Camera writers run in threads; check and record atomically. Expire
         # old positions so the in-memory cache does not grow indefinitely.
         with self._lock:
