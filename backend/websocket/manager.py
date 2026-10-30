@@ -21,7 +21,9 @@ automatically — no changes needed there.
 import asyncio
 import base64
 import json
+import os
 import sys
+import uuid
 from datetime import datetime
 from typing import List
 
@@ -99,11 +101,9 @@ def _build_capture(camera: Camera) -> cv2.VideoCapture:
 
 
 def _write_violations(camera: Camera, frame, detections, violations) -> tuple[int, list[dict]]:
-    """Persist violations to the DB and capture evidence screenshots.
+    """Persist violations to the DB and save annotated screenshot evidence.
     Runs in a thread via run_in_executor.
-    Returns (rows_written, list_of_violation_dicts_to_alert)."""
-    import uuid
-    import os
+    Returns (rows_written, list_of_violation_dicts_to_alert).
 
     full_detections_json = json.dumps(_serialize_detections(detections))
     written = 0
@@ -117,6 +117,11 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
     screenshot_disk_path = None
 
     try:
+        annotated_evidence = None
+        screenshot_filename = None
+        screenshot_path = None
+        screenshot_url = None
+
         for v in violations:
             if v["status"] != "VIOLATION":
                 continue
@@ -124,12 +129,12 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
             if not deduplicator.should_log(source, v["missing_ppe"]):
                 continue
 
-            # Save the annotated screenshot on the first real violation in this frame
-            if screenshot_url is None:
+            # Capture and save live evidence screenshot
+            if annotated_evidence is None:
                 annotated_evidence = annotate_frame(frame.copy(), detections, violations)
                 screenshot_filename = f"{uuid.uuid4()}.jpg"
-                screenshot_disk_path = os.path.join(settings.SCREENSHOT_DIR, screenshot_filename)
-                cv2.imencode(".jpg", annotated_evidence, [cv2.IMWRITE_JPEG_QUALITY, 85])[1].tofile(screenshot_disk_path)
+                screenshot_path = os.path.join(settings.SCREENSHOT_DIR, screenshot_filename)
+                cv2.imwrite(screenshot_path, annotated_evidence)
                 screenshot_url = f"/screenshots/{screenshot_filename}"
 
             row = Violation(
@@ -155,8 +160,7 @@ def _write_violations(camera: Camera, frame, detections, violations) -> tuple[in
                 "missing_ppe": row.missing_ppe,
                 "person_count": row.person_count,
                 "confidence": row.confidence,
-                "screenshot_path": screenshot_url,
-                "screenshot_disk_path": screenshot_disk_path,
+                "screenshot_path": screenshot_path,
                 "timestamp": str(row.timestamp),
                 "details": row.details,
                 "source": row.source,
@@ -223,8 +227,9 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: int):
                 # so `trigger_alerts` (which is async) actually executes.
                 for vdata in pending_alerts:
                     try:
-                        ss_path = vdata.get("screenshot_disk_path") or vdata.get("screenshot_path")
-                        await trigger_alerts(vdata, screenshot_path=ss_path)
+                        asyncio.create_task(
+                            trigger_alerts(vdata, screenshot_path=vdata.get("screenshot_path"))
+                        )
                     except Exception as e:
                         print(f"[WS] alert trigger failed: {e}")
 

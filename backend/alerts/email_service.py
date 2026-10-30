@@ -9,16 +9,16 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_screenshot_path(screenshot_path) -> str | None:
-    """Resolve screenshot path from either a direct filesystem path or a
-    URL path like '/screenshots/uuid.jpg' to the actual disk file."""
+    """Resolve screenshot_path (real filesystem path, relative path, or URL
+    form '/screenshots/<name>') against settings.SCREENSHOT_DIR so the SMTP
+    layer can attach the actual file. Returns None if the file isn't on disk."""
     if not screenshot_path:
         return None
     if os.path.exists(screenshot_path):
         return screenshot_path
-    if isinstance(screenshot_path, str) and screenshot_path.startswith("/screenshots/"):
-        candidate = os.path.join(settings.SCREENSHOT_DIR, os.path.basename(screenshot_path))
-        if os.path.exists(candidate):
-            return candidate
+    candidate = os.path.join(settings.SCREENSHOT_DIR, os.path.basename(str(screenshot_path)))
+    if os.path.exists(candidate):
+        return candidate
     return None
 
 
